@@ -1,0 +1,7 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+data/raw/sell_prices.csv
+data/raw/sales_train_validation.csv
+data/raw/calendar.csv
