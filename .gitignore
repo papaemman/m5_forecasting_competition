@@ -3,7 +3,10 @@
 .Rhistory
 .RData
 .Ruserdata
-data/raw/sell_prices.csv
-data/raw/sales_train_validation.csv
-data/raw/calendar.csv
-output/time_series_b.rds
+
+material/*
+
+data/raw/*
+
+data/additional_data/*
+data/processed/time_series_b.rds
