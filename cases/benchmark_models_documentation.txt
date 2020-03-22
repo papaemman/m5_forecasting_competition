@@ -1,0 +1,168 @@
+=================================
+DOCUMENTATION: benchmark_models.R 
+=================================
+
+Directory : cases/Benchmark_models.R
+Size      : 1350 lines
+
+
+
+// 00. Load libraries //
+
+
+// 01. Read data //
+
+
+// 02. Explore data //
+
+
+// 03. Define helper functions //
+
+  - intervals(x)                        : Count intervals with consequitevely 0s
+  - demand(x)                           : Keep only demand values (ie only non-negative values)
+  - recompose(x, y1,y2,k)               : 
+  - CreateSamples(datasample, xi, xo=1) : Create samples from time series data taking sliding windows of length xi with slide xo
+  - statistics(tsid)                    : Calculate statistics for a time series id (use data from data/processed/time_series_b.rds object)
+
+
+
+// 04. Define Benchmark methods I (local time series forecasting) //
+
+-> Statistical Models
+
+  - 1.  Naive(x, h, type)   : Naive and seasonal naive forecasting method 
+  - 2.  SES(a, x, h, job)   : Simple exponential smoothing (train / fit / predict)
+  - 3.  SexpS(x, h)         : Simple exponential smoothing (predict)
+  - 4.  MA(x, h)            : Moving Average (contains a searching algorithm to find the best window length k)
+  - 5.  Croston(x, y, type) : Croston methods (classic, optimized, sba)
+  - 6.  TSB(x, h)           : Teunter-Syntetos-Babai method
+  - 7.  ADIDA(x, h)         : Aggreagate-Disaggregate Intermittent Demand approach
+  - 8.  iMAPA(x, h)         : Intermittent Multiple Aggregation Prediction Algorithm
+  - 9.  smooth_es(x, h)     : Exponential Smoothing in SSOE state space model
+  - 10. auto_arima(x, h)    : returns best ARIMA model according to either AIC, AICc or BIC value
+  
+-> Machine Learning models
+
+  - 11. MLP_local(input, fh, ni) : Train multiple (10) Multilayer Perceptron models in time series level (local) and average their forecasts
+  - 12. RF_local(input, fh, ni)  : Train random forest model in time series level (local)
+
+-> Function to use all the local benchmark models at once
+
+  - benchmark_f(x, fh)  : Takes an element x = time_series_b[[i]] and fh (forecasting horizon) and applies multiple forecasting methods to this element
+  
+  
+Note: Every benchmark model, except (9) smooth_es and (10) auto.arima, returns the same value multiple times as forecasting.
+
+
+
+// 05. Define Benchmark methods II (global time series level) //
+
+Global time series forecasting means that the model gets data from multiple time series as training data,
+but still make predictions for every time series separatly in the bottom level.
+
+
+  - ML_global(fh, ni, nwindows)   :  Every time series of the dataset offers nwindows = 3 rows in the global training dataset (x_train)
+                                     and 1 window (the last) for the test set. 
+                                     Train an MLP and a Random forest in this dataset.
+                                     Return predictions for every time series in time_series_b object, repeating each predicion as many times 
+                                     as the fh.
+                       
+                       
+                       
+// 06. Prepare the time series in sales_train_validation.csv dataset //
+
+Create the time_series_b object.
+
+This object contains a list of lists, having in each element of the list
+the information about one time series (item_id)
+
+
+
+// 07. Estimate statistics and the dollar sales used for weighting //
+
+Calculate descirptive statistics for sales demand time series,
+for every product in every store (aggregation level 12)
+
+
+
+// 08. Get forecasts for bottom up models //
+
+- Estimate forecast for local time series
+> frc_total
+  Naive sNaive       SES         MA   Croston optCroston       SBA       TSB     ADIDA     iMAPA     ES_bu  ARIMA_bu     MLP_l      RF_l       item_id   dept_id  cat_id store_id state_id fh
+1     1      1 0.9993374 0.92857143 1.0318679  1.0318679 0.9802745 1.0768511 0.9487891 0.9740632 0.8971725 0.9527845 0.4750308 0.5533556 HOBBIES_1_001 HOBBIES_1 HOBBIES     CA_1       CA  1
+2     1      1 0.9993374 0.92857143 1.0318679  1.0318679 0.9802745 1.0768511 0.9487891 0.9740632 1.0216262 0.9319788 0.4750308 0.5533556 HOBBIES_1_001 HOBBIES_1 HOBBIES     CA_1       CA  2
+3     1      1 0.9993374 0.92857143 1.0318679  1.0318679 0.9802745 1.0768511 0.9487891 0.9740632 0.8127465 0.9402829 0.4750308 0.5533556 HOBBIES_1_001 HOBBIES_1 HOBBIES     CA_1       CA  3
+4     0      0 0.1082628 0.07142857 0.2047548  0.2047548 0.1945171 0.1190946 0.1806508 0.1464861 0.1320201 0.1966432 0.2492451 0.1223357 HOBBIES_1_002 HOBBIES_1 HOBBIES     CA_1       CA  1
+5     0      0 0.1082628 0.07142857 0.2047548  0.2047548 0.1945171 0.1190946 0.1806508 0.1464861 0.1320201 0.2027463 0.2492451 0.1223357 HOBBIES_1_002 HOBBIES_1 HOBBIES     CA_1       CA  2
+6     0      1 0.1082628 0.07142857 0.2047548  0.2047548 0.1945171 0.1190946 0.1806508 0.1464861 0.1320201 0.2138401 0.2492451 0.1223357 HOBBIES_1_002 HOBBIES_1 HOBBIES     CA_1       CA  3
+7 ...
+
+- Estimate forecast for global time series
+> frc_total_g
+       MLP_g      RF_g
+1  0.4308087 0.4594667
+2  0.4308087 0.4594667
+3  0.4308087 0.4594667
+4 -0.3686456 0.1216333
+5 -0.3686456 0.1216333
+6 -0.3686456 0.1216333
+7 ...
+  
+
+
+// 09. Get forecasts for top-down models //
+  
+Forecast total unit sales for all products in all stores (insample_top object),
+using sales and external regressors (calendar events)
+
+Forecasting methods:
+- 1. Exponential smoothing
+- 2. Exponential smoothing with external variables
+- 3. ARIMA
+- 4. ARIMA with external variables
+
+-> Calculate historical proportion for every item_id
+-> Mulpiply the forecasting values for total predictions, with historical proportions to get the forecasting for each item_id
+-> Get forecasts for combination approaches (average forecastings from multiple models)
+
+
+
+// 10. Combine all forecasts (from 8,9)  //
+
+frc_total: Combine forecasts from (8) BOTTOM-UP approaches (local, glodal)  and (9) TOP-DOWN approaches.
+
+
+
+// 11. Evaluate forecasts //
+
+Evaluation metric: WRMSSE - Weigthed Root Mean Squared Scaled Error
+
+We need 3 files to calulcate the WRMSSE:
+1. frc_total  : total forecastings
+2. stat_total : statistics about time series (to get the dollar volume)
+3. sales_out  : the ground thruth values for validation days (d_1914 - d_1941)
+ 
+
+
+Calculate error for every one of the 12 aggregation levels:
+
+-> Level 12 : Unit sales of product x, aggregated for each store                   - 30,490
+-> Level 1  : Unit sales of all products, aggregated for all stores/states	       - 1
+-> Level 2  : Unit sales of all products, aggregated for each State                - 3
+-> Level 3  : Unit sales of all products, aggregated for each store                - 10
+-> Level 4  : Unit sales of all products, aggregated for each category             - 3  
+-> Level 5  : Unit sales of all products, aggregated for each department           - 7
+-> Level 6  : Unit sales of all products, aggregated for each State and category   - 9
+-> Level 7  : Unit sales of all products, aggregated for each State and department - 21
+-> Level 8  : Unit sales of all products, aggregated for each store and category   - 30
+-> Level 9  : Unit sales of all products, aggregated for each store and department - 70
+-> Level 10 : Unit sales of product x, aggregated for all stores/states            - 3,049
+-> Level 11 : Unit sales of product x, aggregated for each State                   - 9,225
+
+
+// 12. Export benchmarks' forecasts in Kaggle format //
+
+
+
+
