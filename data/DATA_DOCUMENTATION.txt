@@ -1,0 +1,95 @@
+=======================
+DATA DOCUMENTATION
+=======================
+
+
+------------------------------------------------------
+//  Data folder: data/raw   //
+
+Competition's data provided by hosts
+
+1. sales_train_validation.csv
+2. sales_test_validation.csv
+3. sell_prices.csv
+4. calendar.csv
+
+------------------------------------------------------
+
+//  Data folder: data/processed   //
+
+
+--> Object 1:  time_series_b.rds
+
+Description: Contains all the bottom level time series (unit sales of product x, aggregated for each Store),
+             without the leading zeros
+
+Structure = list of lists
+
+$ :List of 6
+  ..$ x       : num [1:1913] 1 1 1 0 0 0 0 0 0 0 ...
+  ..$ item_id : chr "HOBBIES_1_092"
+  ..$ dept_id : chr "HOBBIES_1"
+  ..$ cat_id  : chr "HOBBIES"
+  ..$ store_id: chr "CA_1"
+  ..$ state_id: chr "CA" 
+
+$ :List of 6
+  ..$ x       : num [1:1395] 2 0 1 0 0 0 0 0 0 0 ...
+  ..$ item_id : chr "HOBBIES_1_093"
+  ..$ dept_id : chr "HOBBIES_1"
+  ..$ cat_id  : chr "HOBBIES"
+  ..$ store_id: chr "CA_1"
+
+  
+
+-->  Object 2: stat_total.rds / stat_total.csv
+
+Desctiption: Summary statistics for every bottom level time series
+
+- tsid        : time series id
+- item_id     : item id
+- dept_id     : department id
+- cat_id      : category id
+- store_id    : store id
+- state_id    : state id
+- lngth       : total length of time series without the leading zeros
+- ADI         : average demand interval
+- CV2         : coefficient of variation 
+- pz          : prpbability of zeros
+- Type        : time series type (Intermittent, Lumpy, Erratic, Smooth)
+- Min         : Minimum demand value
+- Low25       : First quartile of demand values
+- Mean        : Average of demand values
+- Median      : Median of demand values
+- Up25        : Third quartile of demand values
+- Max         : Maximum demand value
+dollar_saless : Dollar sales of the last 28 days
+
+
+--------------------------------------------------------------------------------
+
+//  Data folder: data/additional_data   //
+
+
+--------------------------------------------------------------------------------
+
+//  Data folder: data/submissions  //
+
+
+1. sample_submission.csv
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
