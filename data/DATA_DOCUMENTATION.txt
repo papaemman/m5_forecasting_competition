@@ -66,6 +66,24 @@ Desctiption: Summary statistics for every bottom level time series
 dollar_saless : Dollar sales of the last 28 days
 
 
+
+-> Object 3: frc_top_12_item_ids.RDS
+
+Forecasting for 12 item_ids with all benchmark methods
+
+Row: Forecastings
+Column: Model
+
+Model_1   Model_2   Model_3 ...  item_id        dept_id      cat_id     store_id    state_id    fh
+_______________________________________________________________________________________________
+ 1          1         1.1       HOBBIES_1_001   HOBBIES_1    HOBBIES      CA_1        CA         1
+ 1          3         1.4       HOBBIES_1_001   HOBBIES_1    HOBBIES      CA_1        CA         2
+ 1          2         2.1       HOBBIES_1_001   HOBBIES_1    HOBBIES      CA_1        CA         3
+ ...
+
+
+
+
 --------------------------------------------------------------------------------
 
 //  Data folder: data/additional_data   //
