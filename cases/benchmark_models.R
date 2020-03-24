@@ -17,7 +17,7 @@
 # Given that the validation test-set is not provided to the participants at this stage of the competition, a dummy test-set is given instead to enable the calculation of the scores.
 
 
-## 00. Load libraries ----
+## 00. Load packages ----
 library(zoo)
 library(randomForest)
 library(RSNNS)
@@ -585,6 +585,8 @@ benchmarks_f <- function(x, fh){
   # x <- time_series_b[[1]]
   # fh = 23
   
+  print(x$item_id)
+    
   # Get signal
   input <- x$x
   
@@ -638,15 +640,12 @@ benchmarks_f <- function(x, fh){
 
 ## Note:
 # Global time series forecasting means that the model gets data from multiple time series as training data,
-# but still make predictions for every time series separatly in the bottom level.
-
-## Import data
-# stat_total <- readRDS("data/processed/stat_total.rds")
+# but still make predictions for every time series separately in the bottom level.
 
 ML_Global <- function(fh, ni = 12, nwindows = 3){
   
   
-  ## 1. Define and clean necessary variables 
+  # 1. Define and clean necessary variables 
   # fh = 28
   # ni = 12
   # nwindows = 3
@@ -655,7 +654,7 @@ ML_Global <- function(fh, ni = 12, nwindows = 3){
   Maxies = Minies <- c()
   
   
-  ## 2. Create global training dataset
+  # 2. Create global training dataset
   
   # Note: Every time series of the dataset offers nwindows = 3 rows in the global training dataset (x_train)
   # and 1 window (the last) for the test set
@@ -701,7 +700,7 @@ ML_Global <- function(fh, ni = 12, nwindows = 3){
   colnames(x_test) <- colnames(x_train)
   
   
-  ## 3. Scale ADI, CV2 both in train and test set. 
+  # 4. Scale ADI, CV2 both in train and test set. 
   # (SOS: I have to use train set paramers to normalize both train and test set!)
   
   x_train$ADI <- (x_train$ADI-min(x_train$ADI))/(max(x_train$ADI)-min(x_train$ADI))
@@ -711,7 +710,7 @@ ML_Global <- function(fh, ni = 12, nwindows = 3){
   x_test$CV2 <- (x_test$CV2-min(x_train$CV2))/(max(x_train$CV2)-min(x_train$CV2))
   
   
-  ## 4. MLP
+  # 5. MLP
   
   # Make 10 predictions (10 columns) for every one of the time series in the time_series_b dataset (rows in x_test dataset).
   
@@ -729,7 +728,7 @@ ML_Global <- function(fh, ni = 12, nwindows = 3){
   MLP_g <- unlist(lapply(c(1:length(frc_f)), function(x) rep(frc_f[x], fh)))  # Repeat each value as many times as the fh
   
   
-  ## 5. RF
+  # 6. RF
   dftest <- cbind(x_train, y_train)
   colnames(dftest)[ncol(dftest)] <- "Y"
   modelRF <- randomForest(formula = Y ~ .,  data = dftest, ntree=500)
@@ -781,7 +780,7 @@ input = sales_train = ex_sales = starting_period = tsid <- NULL
 length(time_series_b)
 str(time_series_b)
 
-saveRDS(object = time_series_b, file = "output/time_series_b.rds")
+saveRDS(object = time_series_b, file = "data/processed/time_series_b.rds")
 
 
 ## 07. Estimate statistics and the dollar sales used for weighting ----
@@ -791,7 +790,7 @@ stat_total <- readRDS("data/processed/stat_total.rds")
 View(stat_total)
 
 ## 1B. Start cluster for Parallel computations
-cl = registerDoSNOW(makeCluster(spec = 3, type = "SOCK"))
+cl = registerDoSNOW(makeCluster(spec = 6, type = "SOCK"))
 
 stat_total <- foreach(tsi=1:length(time_series_b), .combine='rbind') %dopar% statistics(tsi)
 stat_total
@@ -821,19 +820,21 @@ b_names <- c("Naive", "sNaive",
              "RF_l")
 
 # Start cluster for Parallel computations
-cl = registerDoSNOW(makeCluster(spec = 3, type = "SOCK", outfile = ""))
+cl = registerDoSNOW(makeCluster(spec = 6, type = "SOCK", outfile = ""))
 
 # Get forecasts for local models
-frc_total <- foreach(tsi = 1:8,
+frc_total <- foreach(tsi = 1:12,
                      .combine = 'rbind', 
                      .packages = c('zoo','randomForest','RSNNS','forecast','smooth')) %dopar% benchmarks_f(x = time_series_b[[tsi]], fh = 28)
 
-saveRDS(object = frc_total, file = "data/processed/frc_total_temp.RDS")
+saveRDS(object = frc_total, file = "data/processed/frc_total_l.RDS")
+frc_total <- readRDS("data/processed/frc_total_l.RDS")
+
 
 ## 2. Global time series (get training data from multiple time series, but make predictions for every time series in bottom level)
 
 # Get forecasts for global models
-frc_total_g <- ML_Global(fh = 28)
+frc_total_g <- ML_Global(fh = 28, ni = 12, nwindows = 3)
 
 
 ## 3. Combine forecasts from local and global models
@@ -841,6 +842,8 @@ frc_total$MLP_g <- frc_total_g$MLP_g
 frc_total$RF_g <- frc_total_g$RF_g
 frc_total_g <- NULL
 
+saveRDS(object = frc_total, file = "data/processed/frc_total_bu.RDS")
+frc_total <- readRDS("data/processed/frc_total_bu.RDS")
 
 ## 09. Get forecasts for top-down models ----
 
@@ -896,12 +899,14 @@ frc_total$Com_lg <- (frc_total$MLP_l+frc_total$MLP_g)/2
 ## 10. Combine all forecasts (from 8,9) ----
 
 ## Add Top-down forecastings in frc_total (forecasting total object)
+
+# b_names = benchmark names
 b_names <- c("Naive", "sNaive", "SES", "MA", 
              "Croston", "optCroston","SBA", "TSB", 
              "ADIDA", "iMAPA",
              "ES_bu", "ARIMA_bu",
              "MLP_l", "RF_l", "MLP_g", "RF_g",
-             "ES_td","ESX","ARIMA_td","ARIMAX",
+             "ES_td","ESX","ARIMA_td","ARIMAX", # ARIMAX can't fit in the data (remove it before define the b_names vector )
              "Com_b","Com_t","Com_tb","Com_lg")
 
 frc_total <- frc_total[,c(b_names,"item_id","dept_id","cat_id","store_id","state_id","fh")]
@@ -912,33 +917,48 @@ saveRDS(object = frc_total, file = "data/processed/frc_total.RDS")
 
 ## 11. Evaluate forecasts ----
 
-# Import total forecastings (frc_total)
-frc_total <- readRDS("data/processed/")
+## Required datasets to calculate the WRMSSE:
 
-# Import stat_total
+# 1. forecastings (frc_total)
+frc_total <- readRDS("data/processed/frc_top_12_item_ids.RDS")
+colnames(frc_total)
+View(frc_total)
+
+# 2. stat_total (volume sales for weigthing)
 stat_total <- readRDS("data/processed/stat_total.rds")
+stat_total <- stat_total[1:12, ]
 
-# Import sales_test_validation dataset
+# 3. sales_test_validation dataset (for ground truth values)
 sales_out <- read.csv("data/raw/sales_test_validation.csv", stringsAsFactors = F)
 
+# 4. sales_train_validation dataset (past sales values for scaling)
+time_series_b <- readRDS("data/processed/time_series_b.rds")
 
+ 
 ## Level 12: Unit sales of product x, aggregated for each store - 30,490
 
 errors_total <- NULL
 
-for (tsid in 1:nrow(sales)){
+# Calculate the error for every time series
+
+for (tsid in 1:nrow(sales)){ # 1:nrow(sales)
   
   # tsid = 1  
   
-  insample_d <- time_series_b[[tsid]]
+  # Historical sales demand (needed for the WRMSSE calculations)
+  insample_d <- time_series_b[[tsid]] 
   insample <- insample_d$x
+  
+  # Ground_truth sales demand for this tsid for error calulcations
   outsample <- as.numeric(sales_out[tsid,6:ncol(sales_out)])
   
-  Methods <- frc_total[(frc_total$item_id==insample_d$item_id)&(frc_total$store_id==insample_d$store_id),]
+  # Get the forecastings for this tsid from frc_total (Use item_id and store_id for unique identification)
+  Methods <- frc_total[(frc_total$item_id==insample_d$item_id) & (frc_total$store_id==insample_d$store_id),]  
   
+  # Calculate the RMSSE for every column in Methods (ie for the forecastings for every different model)
   RMSSE <- c()
-  for (j in 1:length(b_names)){
-    RMSSE <- c(RMSSE, sqrt(mean((Methods[,j]-outsample)^2)/mean(diff(insample)^2))) # scale MSE using first differences
+  for (j in 1:length(b_names)){ # For every benchmark name
+    RMSSE <- c(RMSSE, sqrt(mean((Methods[,j]-outsample)^2)/ mean(diff(insample)^2)) ) # scale MSE using first differences
   }
   
   errors <- data.frame(t(RMSSE)) 
@@ -949,48 +969,83 @@ for (tsid in 1:nrow(sales)){
   errors_total <- rbind(errors_total, errors)
 }
 
+# For every method (column of errors_total) calculate the total score for all time series (rows),
+# weighting the RMSSE based on sales column
 WRMSSE_12 <- c()
 
 for (mid in 1:length(b_names)){
-  WRMSSE_12 <- c(WRMSSE_12, sum(errors_total[,mid]*errors_total$sales/sum(errors_total$sales)))
-}
+  WRMSSE_12 <- c(WRMSSE_12,
+                 sum( errors_total[,mid] * errors_total$sales / sum(errors_total$sales) )
+                 #  column with errors for all time series from specific method * sales for all time series / total sales of all time_series (item_ids)
+                 )}
 
 names(WRMSSE_12) <- b_names
+WRMSSE_12
+
+## My idea: Use different forecasting method for every time series.
+# Which method has the minimum error for every time_series?
+# Use a time series cross validation to select the best method for every time series
+View(errors_total)
+apply(X = errors_total, MARGIN = 1, function(x){b_names[which.min(x)]})
+
+best_method_ids <- apply(X = errors_total, MARGIN = 1, function(x){which.min(x)})
+
+errors_vec <- c()
+for(i in 1:nrow(errors_total)){ # For every tsid in errors_total get the error from the best method
+  j <- best_method_ids[i]
+  errors_vec <- c(errors_vec, errors_total[i,j])
+}
+
+sum( errors_vec * errors_total$sales / sum(errors_total$sales) )  # WRMSSE 
 
 
 ## Level 1: Unit sales of all products, aggregated for all stores/states	- 1
 
+insample <- readRDS(file = "data/processed/aggregated_time_series/sales_aggregation_level_1.rds")
+outsample <- as.numeric(colSums(sales_out[1:12,6:ncol(sales_out)]))
+
 insample <- as.numeric(colSums(sales[,7:ncol(sales)]))
 outsample <- as.numeric(colSums(sales_out[,6:ncol(sales_out)]))
 
-Methods <- ddply(.data = frc_total[,c(colnames(frc_total)[1:length(b_names)],"fh")],
-                 .variables =  .(fh),
-                 .fun = colwise(sum))
+# Sum the partial forecastings for every item_id, for each one of the fh=28 days, to get the forcasting for the aggregation level 1
+Methods <- ddply(.data = frc_total[,c(colnames(frc_total)[1:length(b_names)],"fh")],  # data with forecastings without columns with ids
+                 .variables =  .(fh),                                                 # split .data using the fh column values
+                 .fun = colwise(sum))                                                 # in every subset apply colwise sum
 
 Methods$fh <- NULL
 
+# For every method (column of Methods) calculate the error,
+# weighting the RMSSE based on outsample vector
 WRMSSE_1 <- c()
 
 for (j in 1:length(b_names)){
-  WRMSSE_1 <- c(WRMSSE_1, sqrt(mean((Methods[,j]-outsample)^2)/mean(diff(insample)^2)))
+  WRMSSE_1 <- c(WRMSSE_1,
+                sqrt(mean((Methods[,j]-outsample)^2)/mean(diff(insample)^2))
+                )
 }
+
+WRMSSE_1
 
 
 ## Level 2: Unit sales of all products, aggregated for each State - 3
 insample <- sales
 insample$id = insample$item_id = insample$dept_id = insample$cat_id = insample$store_id <- NULL
-insample <- ddply(.data = insample,
-                  .variables = .(state_id),
-                  .fun = colwise(sum))
 
-outsample <- sales_out
+# Get the insample time series for aggregation level 2
+insample <- readRDS(file = "data/processed/aggregated_time_series/sales_aggregation_level_2.rds")
+insample <- ddply(.data = insample,          
+                  .variables = .(state_id),  # split per state_id 
+                  .fun = colwise(sum))       # column some the items for the same state
+
+outsample <- sales_out[1:12,]
+outsample <- sales_out  
 outsample$item_id = outsample$dept_id = outsample$cat_id = outsample$store_id <- NULL
 outsample <- ddply(.data = outsample,
                    .variables = .(state_id),
                    .fun =  colwise(sum))
 
 Methods <- ddply(.data = frc_total[,c(colnames(frc_total)[1:length(b_names)],"fh","state_id")],
-                 .variables = .(state_id,fh), 
+                 .variables = .(state_id, fh), 
                  .fun = colwise(sum))
 
 Methods$fh <- NULL
@@ -1017,10 +1072,14 @@ for (j in 1:length(b_names)){
   WRMSSE_2 <- c(WRMSSE_2, temp_error)
 }
 
+WRMSSE_2
+
 
 ## Level 3: Unit sales of all products, aggregated for each store - 10
 insample <- sales
 insample$id = insample$item_id = insample$dept_id = insample$cat_id = insample$state_id <- NULL
+
+# Get the insample time series for aggregation level 3
 insample <- ddply(.data = insample,
                   .variables = .(store_id),
                   .fun = colwise(sum))
@@ -1188,13 +1247,22 @@ for (j in 1:length(b_names)){
 ## Level 7:  Unit sales of all products, aggregated for each State and department - 21
 insample <- sales
 insample$id = insample$item_id = insample$store_id = insample$cat_id <- NULL
-insample <- ddply(insample, .(dept_id, state_id), colwise(sum))
+insample <- ddply(.data = insample,
+                  .variables =  .(dept_id, state_id),
+                  .fun =  colwise(sum))
+
 
 outsample <- sales_out
 outsample$item_id = outsample$store_id = outsample$cat_id <- NULL
-outsample <- ddply(outsample, .(dept_id, state_id), colwise(sum))
+outsample <- ddply(.data = outsample,
+                   .variables = .(dept_id, state_id),
+                   .fun = colwise(sum))
 
-Methods <- ddply(frc_total[,c(colnames(frc_total)[1:length(b_names)],"fh","dept_id","state_id")], .(dept_id,state_id,fh), colwise(sum))
+
+Methods <- ddply(.data = frc_total[,c(colnames(frc_total)[1:length(b_names)],"fh","dept_id","state_id")],
+                 .variables =  .(dept_id,state_id,fh),
+                 .fun =  colwise(sum))
+
 Methods$fh <- NULL
 
 WRMSSE_7 <- c()
@@ -1223,7 +1291,9 @@ for (j in 1:length(b_names)){
 ## Level 8: Unit sales of all products, aggregated for each store and category - 30
 insample <- sales
 insample$id = insample$item_id = insample$state_id = insample$dept_id <- NULL
-insample <- ddply(insample, .(cat_id, store_id), colwise(sum))
+insample <- ddply(.data = insample,
+                  .variables = .(cat_id, store_id),
+                  .fun =  colwise(sum))
 
 outsample <- sales_out
 outsample$item_id = outsample$state_id = outsample$dept_id <- NULL
@@ -1258,7 +1328,9 @@ for (j in 1:length(b_names)){
 ## Level 9:  Unit sales of all products, aggregated for each store and department - 70
 insample <- sales
 insample$id = insample$item_id = insample$state_id = insample$cat_id <- NULL
-insample <- ddply(insample, .(dept_id, store_id), colwise(sum))
+insample <- ddply(.data = insample,
+                  .variables = .(dept_id, store_id),
+                  .fun =  colwise(sum))
 
 outsample <- sales_out
 outsample$item_id = outsample$state_id = outsample$cat_id <- NULL
@@ -1293,7 +1365,9 @@ for (j in 1:length(b_names)){
 ## Level 10: Unit sales of product x, aggregated for all stores/states - 3,049
 insample <- sales
 insample$id = insample$dept_id = insample$state_id = insample$cat_id = insample$store_id <- NULL
-insample <- ddply(insample, .(item_id), colwise(sum))
+insample <- ddply(.data = insample,
+                  .variables = .(item_id),
+                  .fun =  colwise(sum))
 
 outsample <- sales_out
 outsample$dept_id = outsample$state_id = outsample$cat_id = outsample$store_id <- NULL
@@ -1325,10 +1399,15 @@ for (j in 1:length(b_names)){
 }
 
 
-## Level 11: Unit sales of product x, aggregated for each State - 9,225
+## Level 11: Unit sales of product x, aggregated for each State - 9,147
 insample <- sales
-insample$id = insample$dept_id = insample$cat_id = insample$store_id<- NULL
-insample <- ddply(insample, .(item_id, state_id), colwise(sum))
+insample$id = insample$dept_id = insample$cat_id = insample$store_id <- NULL
+
+cl = registerDoSNOW(makeCluster(spec = 4, type = "SOCK"))
+insample <- ddply(.data = insample, 
+                  .variables = .(item_id, state_id),
+                  .fun = colwise(sum), .parallel = T)
+stopCluster(cl)
 
 outsample <- sales_out
 outsample$dept_id = outsample$cat_id = outsample$store_id <- NULL
@@ -1374,35 +1453,56 @@ row.names(WRMSSE) <- c("Total", "State", "Store",
                        "Product", "Product-State", "Product-Store", "Average")
 
 # Save errors
-write.csv(WRMSSE, "data/processed/summary.csv")
+  write.csv(WRMSSE, "data/processed/WRMSSE.csv")
 
 
-## 12. Export benchmarks' forecasts in Kaggle format ----
+## 12. Export benchmarks' forecasts in Kaggle's format ----
 
-for (mid in 1:length(b_names)){
+## Import forecastings
+frc_total <- readRDS("data/processed/frc_top_12_item_ids.RDS")
+View(frc_total)
+
+## benchmark names
+b_names <- c("Naive", "sNaive", "SES", "MA", 
+             "Croston", "optCroston","SBA", "TSB", 
+             "ADIDA", "iMAPA",
+             "ES_bu", "ARIMA_bu",
+             "MLP_l", "RF_l", "MLP_g", "RF_g",
+             "ES_td","ESX","ARIMA_td","ARIMAX", # ARIMAX can't fit in the data (remove it from the b_names vector )
+             "Com_b","Com_t","Com_tb","Com_lg")
+
+
+## For every method (mid) in frc_total (column), create a submission file with the appropriate format
+for (mid in 1:length(b_names)){ # mid: method id
   
+  # Get submission file for method id
   submission <- frc_total[,c("item_id", "store_id", b_names[mid], "fh")]
   colnames(submission)[1:2] <- c("Agg_Level_1", "Agg_Level_2")
   
-  submission$F7 = submission$F6 = submission$F5 = submission$F4 = submission$F3 = submission$F2 = submission$F1<- NA
+  # Create new columns F1, F2, ..., F28
+  submission$F7 = submission$F6 = submission$F5 = submission$F4 = submission$F3 = submission$F2 = submission$F1 <- NA
   submission$F14 = submission$F13 = submission$F12 = submission$F11 = submission$F10 = submission$F9 = submission$F8 <- NA
   submission$F21 = submission$F20 = submission$F19 = submission$F18 = submission$F17 = submission$F16 = submission$F15 <- NA
   submission$F28 = submission$F27 = submission$F26 = submission$F25 = submission$F24 = submission$F23 = submission$F22 <- NA
   
-  l1_unique <- unique(submission$Agg_Level_1)
-  l2_unique <- unique(submission$Agg_Level_2)
+  l1_unique <- unique(submission$Agg_Level_1)  # Unique item ids
+  l2_unique <- unique(submission$Agg_Level_2)  # Unique store ids
   frc <- NULL
   
-  for (l2 in l2_unique){
-    for (l1 in l1_unique){
+  # Transpose the approprate column (3) to row
+  
+  for (l2 in l2_unique){   # l2 = l2_unique[1]
+    for (l1 in l1_unique){ # l1 = l1_unique[1]
       temp <- submission[(submission$Agg_Level_1==l1)&(submission$Agg_Level_2==l2),]
-      temp[1,5:32] <- temp[,3]
-      frc <- rbind(frc, data.frame(l1, l2, temp[1,5:32]))
+      temp[1, 5:32] <- temp[,3]
+      frc <- rbind(frc, data.frame(l1, l2, temp[1, 5:32]))
     }
   }
+  
+  # Create data frame with the rigth format (columns and column names)
   colnames(frc)[1:2] <- c("Agg_Level_1", "Agg_Level_2")
   frc$id <- paste0(frc$Agg_Level_1,"_",frc$Agg_Level_2,"_validation")
   frc <- frc[,c("id", colnames(frc)[3:30])]
-  write.csv(frc, row.names = FALSE, paste0("PF_", b_names[mid],".csv")) 
+  write.csv(frc, row.names = FALSE, paste0("BF_", b_names[mid],".csv")) 
 }
 
