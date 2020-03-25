@@ -1,5 +1,5 @@
 ### load a time series singal
-
+sales_aggregation_level_1 <- readRDS("~/m5_forecasting_competition/data/processed/aggregated_time_series/sales_aggregation_level_1.rds")
 
 #### forecasting based knn ####
 library(tsfknn)
@@ -57,3 +57,4 @@ prophet_frc <- function(x,x_length,h){
 
 #####
 
+plot(model,forecast)
