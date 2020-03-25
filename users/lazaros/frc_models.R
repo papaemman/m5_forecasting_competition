@@ -49,12 +49,13 @@ library(prophet)
 
 prophet_frc <- function(x,x_length,h){
   df <- data.frame(ds = seq(as.Date('2015-01-01'),length.out = x_length, by = 'd'),y=x)
-  model <-prophet(history)
+  model <-prophet(df)
   future <- make_future_dataframe(model, periods = h)
   forecast <- predict(model, future)
   return(forecast)
   }
 
+prophet_frc(sales_aggregation_level_1,27,10)
 #####
 
 plot(model,forecast)
