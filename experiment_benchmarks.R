@@ -42,7 +42,7 @@ b_names <- c("Naive", "sNaive",
 cl = registerDoSNOW(makeCluster(spec = 4, type = "SOCK", outfile = ""))
 
 # Get forecasts for local models
-frc_total <- foreach(tsi = 1:length(sales),
+frc_total <- foreach(tsi = 1:nrow(sales),
                      .combine = 'rbind', 
                      .packages = c('zoo','randomForest','RSNNS','forecast','smooth')) %dopar% benchmarks_f(x = time_series_b[[tsi]], fh = 28)
 
