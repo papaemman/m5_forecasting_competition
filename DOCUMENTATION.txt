@@ -1,0 +1,43 @@
+================
+DOCUMENTATION
+================
+
+
+// Experiment Workflow: How to make a kaggle submission. //
+
+1. Copy experiment_template.R script and rename it
+2. Write forecasting method function (modules/)
+3. Define the wrapper experiment function for methods want to use (script: modules/experimentation_helpers.R)
+4. Run the experiment.R script and save forecastings in data/forecastings directory
+5. Evaluate forecastings (save WRMSSE scores)
+6. Make submission file  (save submission file)
+
+
+
+------------------------------------------
+
+// Directories structure: //
+
+data/
+
+output/
+
+cases/
+
+users/ 
+
+modules/
+
+------------------------------------------------
+
+
+// Submission process: //
+
+1. Go to competition's page at Kaggle (https://www.kaggle.com/c/m5-forecasting-accuracy/submit)
+2. Upload the submission.csv file (data/submissions/)
+3. Write a description about the submission
+4. Wait for WRMSSE calculations
+5. 
+
+
+
