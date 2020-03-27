@@ -173,7 +173,7 @@ statistics <- function(tsid){  # tsid: time series id
   ex_price <- prices[(prices$item_id==input$item_id) & (prices$store_id==input$store_id),] 
   
   # Merge with calendar
-  ex_calendar <- merge(έ, ex_price, by=c("wm_yr_wk"), all.x = T)   # Note that prices datasets doesn't contain prices for all days for every product
+  ex_calendar <- merge(calendar, ex_price, by=c("wm_yr_wk"), all.x = T)   # Note that prices datasets doesn't contain prices for all days for every product
   ex_calendar <- ex_calendar[order(ex_calendar$date),]
   row.names(ex_calendar) <- NULL
   

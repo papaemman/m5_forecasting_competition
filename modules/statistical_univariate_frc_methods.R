@@ -209,7 +209,7 @@ iMAPA <- function(x, h){
   }
   
   forecast <- colMeans(frc)
-  return(forecast)            # Later addition
+  return(forecast)
 }
 
 # iMAPA(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7), h = 2)
@@ -231,5 +231,6 @@ auto_arima <- function(x, h){
 }
 
 # auto_arima(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7,1,2,3), h = 7)
+
 
 
