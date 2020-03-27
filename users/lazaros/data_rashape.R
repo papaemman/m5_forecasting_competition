@@ -10,8 +10,8 @@ dim(sales_train_val)
 
 # reshape data 
 long_DF <- sales_train_val %>% gather(id,n_sales, d_1:d_1913)
-dim(long_DF)
-nrow(long_DF)/1913
+#dim(long_DF)
+#nrow(long_DF)/1913
 # long_DF[1:1000]
 #long_DF$ %>% table
 
