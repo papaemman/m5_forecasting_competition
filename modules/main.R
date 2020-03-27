@@ -7,14 +7,27 @@
 
 ## 00. Load packages ----
 
+# Utils
+library(tictoc)
+
+# Data wrangling
+library(plyr)
+library(dplyr)
+
+# Parallel computations
+library(doSNOW)
+library(foreach)
+
+# Time series manipulations and forecasting
 library(zoo)
+library(forecast)
+library(smooth)
+library(prophet)
+
+# Machine Learning
 library(randomForest)
 library(RSNNS)
-library(foreach)
-library(smooth)
-library(doSNOW)
-library(plyr)
-library(forecast)
+
 
 
 
