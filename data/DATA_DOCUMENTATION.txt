@@ -46,39 +46,70 @@ $ :List of 6
 
 Desctiption: Summary statistics for every bottom level time series
 
-- tsid        : time series id
-- item_id     : item id
-- dept_id     : department id
-- cat_id      : category id
-- store_id    : store id
-- state_id    : state id
-- lngth       : total length of time series without the leading zeros
-- ADI         : average demand interval
-- CV2         : coefficient of variation 
-- pz          : prpbability of zeros
-- Type        : time series type (Intermittent, Lumpy, Erratic, Smooth)
-- Min         : Minimum demand value
-- Low25       : First quartile of demand values
-- Mean        : Average of demand values
-- Median      : Median of demand values
-- Up25        : Third quartile of demand values
-- Max         : Maximum demand value
-dollar_saless : Dollar sales of the last 28 days
+- tsid          : time series id
+- item_id       : item id
+- dept_id       : department id
+- cat_id        : category id
+- store_id      : store id
+- state_id      : state id
+- lngth         : total length of time series without the leading zeros
+- ADI           : average demand interval
+- CV2           : coefficient of variation 
+- pz            : prpbability of zeros
+- Type          : time series type (Intermittent, Lumpy, Erratic, Smooth)
+- Min           : Minimum demand value
+- Low25         : First quartile of demand values
+- Mean          : Average of demand values
+- Median        : Median of demand values
+- Up25          : Third quartile of demand values
+- Max           : Maximum demand value
+- dollar_saless : Dollar sales of the last 28 days
 
 
 
--> Object 3: frc_top_12_item_ids.RDS
+--> Object 3: stat_total_best_method.R
 
-Forecasting for 12 item_ids with all benchmark methods
+Idea: I can use this best_method column to make forecasting for every time series
+
+--> Subdirectory: errors/
+
+errors_total_level_12.csv:  This file contains the errors for the forecastings using multiple forecasting Methods,
+                            for every time series and a validation dataset
+
+Trying out multiple forecasting methods for every bottom level time series, 
+and using a validation dataset (sales_test_validation), I can compute the error for every method.
+
+using these errors, I can infer the best model to forecast every time series.
+Save the best method for every time series at the stat_total$best_method.
+
+
+
+--> Subdirectory: aggregated_time_series/sales_aggregation_level_n datasets
+
+Sales time series for each one of the 12 aggregation level (except aggregation level 12 which is the sales_train_validation dataset).
+
+These files used in evaluate_forecasts.R script, to make faster the calculations of the evaluation metric.
+
+
+------------------------------------------------------------------
+
+//  Data folder: data/forecastings   //
+
+frc_top_12_item_ids.RDS: Forecasting for 12 item_ids with all benchmark methods
 
 Row: Forecastings
 Column: Model
 
 Model_1   Model_2   Model_3 ...  item_id        dept_id      cat_id     store_id    state_id    fh
-_______________________________________________________________________________________________
+___________________________________________________________________________________________________
  1          1         1.1       HOBBIES_1_001   HOBBIES_1    HOBBIES      CA_1        CA         1
  1          3         1.4       HOBBIES_1_001   HOBBIES_1    HOBBIES      CA_1        CA         2
  1          2         2.1       HOBBIES_1_001   HOBBIES_1    HOBBIES      CA_1        CA         3
+ ...
+ 1          5         5.1       HOBBIES_1_001   HOBBIES_1    HOBBIES      CA_1        CA         28
+ 0          1         0.5       HOBBIES_1_001   HOBBIES_1    HOBBIES      CA_1        CA          1
+ 0          1         0.5       HOBBIES_1_001   HOBBIES_1    HOBBIES      CA_1        CA          2
+ 0          1         0.5       HOBBIES_1_001   HOBBIES_1    HOBBIES      CA_1        CA          3
  ...
 
 
