@@ -44,7 +44,7 @@ cl = registerDoSNOW(makeCluster(spec = 4, type = "SOCK", outfile = ""))
 # Get forecasts for local models
 frc_total <- foreach(tsi = 1:nrow(sales),
                      .combine = 'rbind', 
-                     .packages = c('zoo','randomForest','RSNNS','forecast','smooth')) %dopar% benchmarks_f(x = time_series_b[[tsi]], fh = 28)
+                     .packages = c('zoo','randomForest','RSNNS','forecast','smooth')) %dopar% benchmarks_f(x = time_series_b[[tsi]], fh = 28, b_names = b_names)
 
 saveRDS(object = frc_total, file = "data/processed/frc_total_l.RDS")
 frc_total <- readRDS("data/processed/frc_total_l.RDS")
