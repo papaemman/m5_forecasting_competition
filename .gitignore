@@ -7,6 +7,7 @@
 material/*
 
 data/raw/*
-
+data/forecastings/*
+data/submissions/*
 data/additional_data/*
 data/processed/time_series_b.rds
