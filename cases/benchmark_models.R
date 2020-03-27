@@ -920,7 +920,7 @@ saveRDS(object = frc_total, file = "data/processed/frc_total.RDS")
 ## Required datasets to calculate the WRMSSE:
 
 # 1. forecastings (frc_total)
-frc_total <- readRDS("data/processed/frc_top_12_item_ids.RDS")
+frc_total <- readRDS("data/forecastings/frc_top_12_item_ids.RDS")
 colnames(frc_total)
 View(frc_total)
 
@@ -1459,7 +1459,7 @@ row.names(WRMSSE) <- c("Total", "State", "Store",
 ## 12. Export benchmarks' forecasts in Kaggle's format ----
 
 ## Import forecastings
-frc_total <- readRDS("data/processed/frc_top_12_item_ids.RDS")
+frc_total <- readRDS("data/forecastings/frc_top_12_item_ids.RDS")
 View(frc_total)
 
 ## benchmark names

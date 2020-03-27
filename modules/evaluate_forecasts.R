@@ -4,25 +4,32 @@
 #                          #
 ############################
 
-## Example dataset with forecastings (frc_total)
-# frc_total <- readRDS("data/processed/frc_top_12_item_ids.RDS")
+## Note: Example dataset with forecastings (frc_total) to pass as argument in evaluate_experiment(frc_total, b_names) function:
+
+## Forecastings
+# frc_total <- readRDS("data/forecastings/frc_top_12_item_ids.RDS")
 # colnames(frc_total)
 # View(frc_total)
 # str(frc_total)
+# dim(frc_total)
 
-# Columns : last column must be names as "fh"
-# Rows    :
+# Columns : Methhod_1, Method_2, ..., item_id, dept_id, cat_id, store_id, state_id, fh
+# Rows    : For every item_id + dept_id + cat_id + store_id + state_id + fh the forecasting value
 
-# b_names : vector with the names of forecasting methods (columns in frc_total dataframe)
+## b_names : vector with the names of forecasting methods (columns in frc_total dataframe)
+# b_names <- setdiff(colnames(frc_total), c("item_id", "dept_id", "cat_id", "store_id", "state_id", "fh"))
+# b_names
 
 
 ## Function: Evaluate experiment ##
 
-evaluate_experiment <- function(frc_total, b_names){
+evaluate_experiment <- function(frc_total, b_names, evaluation_file_name_prefix){
   
   
-  ## 0. Import required datasets to calculate the WRMSSE:
-
+  ## 0. Import required datasets to calculate the WRMSSE
+  
+  print("Import required datasets...")
+  
   # sales_train_validation dataset (to calculate demand for aggregation levels) 
   # - Comment out the following line because I will read aggregated time series from disk, for faster computations
   # sales <- read.csv("data/raw/sales_train_validation.csv", stringsAsFactors = F)
@@ -39,13 +46,18 @@ evaluate_experiment <- function(frc_total, b_names){
   
   ## Level 12: Unit sales of product x, aggregated for each store - 30,490
   
+  print("WRMSSE_12 calculations...")
+  
   errors_total <- NULL
   
   # Calculate the error for every time series
   
-  for (tsid in 1:nrow(sales)){
+  for (tsid in 1:length(time_series_b)){
     
-    # tsid = 1  
+    # tsid = 1
+    
+    # Print tsid repeatetively at the same line
+    cat("\r", paste("tsid:", tsid))
     
     # Historical sales demand (needed for the WRMSSE calculations)
     insample_d <- time_series_b[[tsid]] 
@@ -85,7 +97,10 @@ evaluate_experiment <- function(frc_total, b_names){
   print(paste("WRMSSE_12", WRMSSE_12))
   
   
+  
   ## Level 1: Unit sales of all products, aggregated for all stores/states	- 1
+  
+  print("WRMSSE_1 calculations...")
   
   # Get the insample time series for aggregation level 1
   # insample <- as.numeric(colSums(sales[,7:ncol(sales)]))
@@ -114,7 +129,10 @@ evaluate_experiment <- function(frc_total, b_names){
   print(paste("WRMSSE_1:", WRMSSE_1))
   
   
+  
   ## Level 2: Unit sales of all products, aggregated for each State - 3
+  
+  print("WRMSSE_2 calculations...")
   
   # Get the insample time series for aggregation level 2
   # insample <- sales
@@ -164,6 +182,8 @@ evaluate_experiment <- function(frc_total, b_names){
   
   ## Level 3: Unit sales of all products, aggregated for each store - 10
   
+  print("WRMSSE_3 calculations...")
+  
   # Get the insample time series for aggregation level 3
   # insample <- sales
   # insample$id = insample$item_id = insample$dept_id = insample$cat_id = insample$state_id <- NULL
@@ -212,6 +232,8 @@ evaluate_experiment <- function(frc_total, b_names){
   
   ## Level 4:  Unit sales of all products, aggregated for each category - 3
   
+  print("WRMSSE_4 calculations...")
+  
   # Get the insample time series for aggregation level 4
   # insample <- sales
   # insample$id = insample$item_id = insample$dept_id = insample$store_id = insample$state_id <- NULL
@@ -257,7 +279,10 @@ evaluate_experiment <- function(frc_total, b_names){
   print(paste("WRMSSE_4:", WRMSSE_4))
   
   
+  
   ## Level 5:  Unit sales of all products, aggregated for each department - 7
+  
+  print("WRMSSE_5 calculations...")
   
   # Get the insample time series for aggregation level 5
   # insample <- sales
@@ -305,7 +330,10 @@ evaluate_experiment <- function(frc_total, b_names){
   print(paste("WRMSSE_5:", WRMSSE_5))
   
   
+  
   ## Level 6: Unit sales of all products, aggregated for each State and category - 9
+  
+  print("WRMSSE_6 calculations...")
   
   # Get the insample time series for aggregation level 6
   # insample <- sales
@@ -353,7 +381,10 @@ evaluate_experiment <- function(frc_total, b_names){
   print(paste("WRMSSE_6:", WRMSSE_6))
   
   
+  
   ## Level 7:  Unit sales of all products, aggregated for each State and department - 21
+  
+  print("WRMSSE_7 calculations...")
   
   # Get the insample time series for aggregation level 7
   # insample <- sales
@@ -404,6 +435,8 @@ evaluate_experiment <- function(frc_total, b_names){
   
   ## Level 8: Unit sales of all products, aggregated for each store and category - 30
   
+  print("WRMSSE_8 calculations...")
+  
   # Get the insample time series for aggregation level 8
   # insample <- sales
   # insample$id = insample$item_id = insample$state_id = insample$dept_id <- NULL
@@ -446,6 +479,8 @@ evaluate_experiment <- function(frc_total, b_names){
   
   
   ## Level 9:  Unit sales of all products, aggregated for each store and department - 70
+  
+  print("WRMSSE_9 calculations...")
   
   # Get the insample time series for aggregation level 9
   # insample <- sales
@@ -490,6 +525,8 @@ evaluate_experiment <- function(frc_total, b_names){
   
   ## Level 10: Unit sales of product x, aggregated for all stores/states - 3,049
   
+  print("WRMSSE_10 calculations...")
+  
   # Get the insample time series for aggregation level 10
   # insample <- sales
   # insample$id = insample$dept_id = insample$state_id = insample$cat_id = insample$store_id <- NULL
@@ -510,6 +547,10 @@ evaluate_experiment <- function(frc_total, b_names){
   for (j in 1:length(b_names)){
     temp_error <- 0
     for (i in 1:nrow(insample)){
+      
+      # Print tsid repeatetively at the same line
+      cat("\r", paste("tsid:", i))
+      
       temp_in <- as.numeric(insample[i,2:ncol(insample)])
       sstart<-data.frame(temp_in, c(1:length(temp_in)))
       sstart <- min(sstart[sstart$temp_in>0,2])
@@ -533,6 +574,8 @@ evaluate_experiment <- function(frc_total, b_names){
   
   ## Level 11: Unit sales of product x, aggregated for each State - 9,147
   
+  print("WRMSSE_11 calculations...")
+  
   # Get the insample time series for aggregation level 11
   # insample <- sales
   # insample$id = insample$dept_id = insample$cat_id = insample$store_id <- NULL
@@ -553,6 +596,10 @@ evaluate_experiment <- function(frc_total, b_names){
   for (j in 1:length(b_names)){
     temp_error  <- 0
     for (i in 1:nrow(insample)){
+      
+      # Print tsid repeatetively at the same line
+      cat("\r", paste("tsid:", i))
+      
       temp_in <- as.numeric(insample[i,3:ncol(insample)])
       sstart<-data.frame(temp_in, c(1:length(temp_in)))
       sstart <- min(sstart[sstart$temp_in>0,2])
@@ -575,6 +622,8 @@ evaluate_experiment <- function(frc_total, b_names){
   
   
   ## Combine WRMSSE (errors) for every aggregation level
+  print("Combining WRMSSE scores...")
+  
   WRMSSE <- rbind(WRMSSE_1, WRMSSE_2, WRMSSE_3,
                   WRMSSE_4, WRMSSE_5, WRMSSE_6,
                   WRMSSE_7, WRMSSE_8, WRMSSE_9,
@@ -587,10 +636,19 @@ evaluate_experiment <- function(frc_total, b_names){
                          "State-Department", "Store-Category", "Store-Department",
                          "Product", "Product-State", "Product-Store", "Average")
   
+  print("Weigthed Root Mean Squared error (WRMSSE) is:")
   print(WRMSSE)
   
-  # Save errors
-  write.csv(x = WRMSSE, file = "data/processed/WRMSSE.csv")
-  print("Done.")
-
+  ## Save errors
+  path <- paste0("data/submissions/", evaluation_file_name_prefix, "_WRMSSE.csv")
+  write.csv(x = WRMSSE, file = path, quote = F)
+  
+  print("Experiment Done!")
+  print(paste("Score file saved at", path, "directory."))
+  
+  # return(WRMSSE)
 }
+
+
+# Test
+# scores <- evaluate_experiment(frc_total = frc_total, b_names = b_names, evaluation_file_name_prefix = "exp_naive")
