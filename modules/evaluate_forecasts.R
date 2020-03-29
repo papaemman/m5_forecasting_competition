@@ -646,7 +646,7 @@ evaluate_experiment <- function(frc_total, b_names, evaluation_file_name_prefix)
   print("Experiment Done!")
   print(paste("Score file saved at", path, "directory."))
   
-  # return(WRMSSE)
+  return(WRMSSE)
 }
 
 
