@@ -98,7 +98,23 @@ MA <- function(x, h){
   return(forecast)
 }
 
-# MA(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7,1,2,3,4,5,6,7), h = 2)
+# MA(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7,1,2,3,4,5,6,7), h = 5)
+
+
+## 04. Moving Average v2----
+
+MA_v2 <- function(x, h){
+  
+  frc <- c()
+  for (i in 1:h) {
+    x <- c(x, MA(x = x, h = 1))
+  }
+  
+  return(tail(x, h))
+}
+
+# MA(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7,1,2,3,4,5,6,7), h = 5)
+# MA_v2(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7,1,2,3,4,5,6,7), h = 5)
 
 
 ## 05. Croston method  ----
@@ -125,7 +141,7 @@ Croston <- function(x, h, type){
   return(forecast)
 }
 
-# Croston(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7), h = 3, type = "classic")
+# Croston(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7,3.635758, 3.635758), h = 3, type = "classic")
 # Croston(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7), h = 3, type = "optimized")
 # Croston(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7), h = 3, type = "sba")
 
@@ -166,6 +182,7 @@ TSB <- function(x, h){
 }
 
 # TSB(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7), h = 3)
+# TSB(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7, 5.265754, 5.265754), h = 3)
 
 
 ## 07. Aggreagate-Disaggregate Intermittent Demand approach  ----
@@ -189,7 +206,7 @@ ADIDA <- function(x, h){
 }
 
 # ADIDA(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7), h = 3)
-
+# ADIDA(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7, 6.05481, 6.05481), h = 3)
 
 ## 08. Intermittent Multiple Aggregation Prediction Algorithm  ----
 
@@ -212,8 +229,8 @@ iMAPA <- function(x, h){
   return(forecast)
 }
 
-# iMAPA(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7), h = 2)
-# iMAPA(x = c(1,2,0,0,0,1,2,0,0,0,1,1,0,0,0,1,1,0,0,0,0), h = 1)
+# iMAPA(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7), h = 3)
+# iMAPA(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7, 6.05481, 6.05481), h = 2)
 
 
 ## 09. Exponential smoothing in SSOE state space model (smooth::es())  ----
@@ -222,7 +239,7 @@ smooth_es <- function(x, h){
   as.numeric(smooth::es(ts(data = x, frequency = 7), h=h)$forecast)
 }
 
-# smooth_es(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7), h = 1)
+# smooth_es(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7), h = 5)
 
 
 ## 10. ARIMA ----
