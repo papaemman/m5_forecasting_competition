@@ -1,100 +1,12 @@
-###########################################
-#                                         #
-#  Machine Learning forecasting methods   #
-#                                         #
-###########################################
+#################################################
+#                                               #
+#  Machine Learning forecasting methods global  #
+#                                               #
+#################################################
 
-# // Machine Learning Benchmark methods: local time series forecasting //
+# // Machine Learning Benchmark methods: global time series forecasting //
 
-# Note: 
-# Every function takes as input a univarite signal and produce forecastings for the next fh days
-
-
-## 01. Multilayer Perceptron (at time series level - local) ----
-
-MLP_local <- function(input, fh, ni){
-  
-  # ni = 14
-  
-  # Scale data (min-max scaling)
-  MAX <- max(input)
-  MIN <- min(input)
-  Sinsample <- (input-MIN)/(MAX-MIN)
-  
-  # Create training sample
-  samplegenerate <- CreateSamples(datasample = Sinsample, xi = ni)
-  dftrain <- data.frame(samplegenerate)
-  colnames(dftrain) <- c(paste0("X",c(1:ni)),"Y")
-  
-  train_x <- as.matrix(dftrain[,1:(ncol(dftrain)-1)])
-  train_y <- dftrain[,ncol(dftrain)]
-  
-  # Train 10 mlp models
-  # From every model save the predictions (forecasts)
-  frc_f <- NULL
-  
-  for (ssn in c(1:10)){
-    
-    modelMLP <- mlp(x = train_x,
-                    y = train_y, 
-                    size = (2*ni), maxit = 500, initFunc = "Randomize_Weights", 
-                    learnFunc = "SCG", hiddenActFunc = "Act_Logistic", 
-                    shufflePatterns = FALSE, linOut = TRUE)
-    
-    # Predict
-    tempin <- data.frame(t(tail(Sinsample, ni)))    # Get the last ni observations from Sinsample data for predict (forecasting)
-    frcst <- predict(modelMLP, tempin)
-    MLf <- rep(as.numeric(frcst)*(MAX-MIN)+MIN, fh)
-    
-    frc_f <- rbind(frc_f, MLf)
-  }
-  
-  # Get the median for each prediction from every one of the 10 models
-  frc <- unlist(lapply(c(1:fh), function(x) median(frc_f[,x])))    # instead of mean -> median
-  
-  return(frc)
-}
-
-# MLP_local(input = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7), fh = 1, ni = 6)
-
-
-## 02. Random forest (at time series level - local) ----
-
-RF_local <- function(input, fh, ni){
-  
-  ## Scale data 
-  # MAX <- max(input)
-  # MIN <- min(input)
-  # Sinsample <- (input-MIN)/(MAX-MIN)
-  
-  ## Skip scaling (Note: RF doesn't need scaling!)
-  Sinsample <- input
-  
-  # Create training sample
-  samplegenerate <- CreateSamples(datasample = Sinsample, xi = ni)
-  dftrain <- data.frame(samplegenerate)
-  colnames(dftrain) <- c(paste0("X",c(1:ni)),"Y")
-  
-  #Train model
-  modelRF <- randomForest(formula = Y ~ .,  data = dftrain, ntree=500)
-  
-  # Predict
-  tempin <- data.frame(t(tail(Sinsample, ni)))
-  frcst <- predict(object = modelRF, newdata = tempin)
-  
-  MLf <- as.numeric(frcst)                      # MLf: Machine Learning forecast
-  # MLf <- as.numeric(frcst)*(MAX-MIN)+MIN
-  
-  frc <- rep(MLf, fh)
-  
-  return(frc)
-}
-
-# RF_local(input = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7), fh = 1, ni = 7)
-
-
-
-## 03. MLP and RF (global time series forecasting) -----
+## 01. MLP and RF (global time series forecasting) -----
 
 ## Note:
 # Global time series forecasting means that the model gets data from multiple time series as training data,
@@ -197,5 +109,3 @@ ML_Global <- function(fh, ni = 12, nwindows = 3){
   
   return(output)
 }
-
-
