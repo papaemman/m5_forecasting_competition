@@ -28,7 +28,9 @@ library(prophet)
 library(randomForest)
 library(RSNNS)
 
-
+# Visualization
+library(ggplot2)
+library(plotly)
 
 
 ## 01. Define global variables ----
