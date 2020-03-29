@@ -28,16 +28,38 @@ users/
 
 modules/
 
+
+--> evaluate_forecasts.R
+
+evaluate_experiment() : This function calculates the error for every aggregation level: 
+
+1.  Total
+2.  State
+3.  Store
+4.  Category
+5.  Department
+6.  State - Category
+7.  State - Department
+8.  Store - Category
+9.  Store - Department
+10. Product
+11. Product - State
+12. Product - Store
+13. "Average"
+
+After all the above calulcations, finds the "Average" which is the Kaggle's WRMSSE score.
+
+
 ------------------------------------------------
 
 
-// Submission process: //
+// Kaggle Submission process: //
 
 1. Go to competition's page at Kaggle (https://www.kaggle.com/c/m5-forecasting-accuracy/submit)
 2. Upload the submission.csv file (data/submissions/)
 3. Write a description about the submission
-4. Wait for WRMSSE calculations
-5. 
+4. Wait for sumbission evaluation
+5. Check WRMSSE score and Leaderboard rank
 
 
 

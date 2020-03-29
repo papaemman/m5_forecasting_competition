@@ -2,6 +2,7 @@
 DATA DOCUMENTATION
 =======================
 
+sales -> time_series_b -> stat_total
 
 ------------------------------------------------------
 //  Data folder: data/raw   //
