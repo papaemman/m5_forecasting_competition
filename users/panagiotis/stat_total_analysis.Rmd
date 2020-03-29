@@ -1,0 +1,377 @@
+---
+title: "Στατιστική Ανάλυση των Δεδομένων"
+author: "Παναγιώτης Παπαεμμανουήλ"
+date: "`r Sys.Date()`"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_knit$set(root.dir = normalizePath("/home/user7/Projects/m5_forecasting_competition/"))
+```
+
+
+```{r Import packages, message=FALSE, warning=FALSE, include=FALSE}
+library(DT)
+library(tidyquant)
+```
+
+
+```{r Source dependencies, message=FALSE, warning=FALSE, include=FALSE}
+lapply(X = paste0("modules/", list.files(path = "modules/")), FUN = source)
+```
+
+```{r Import raw data}
+calendar <- read.csv("data/raw/calendar.csv", stringsAsFactors = F)
+sales <- read.csv("data/raw/sales_train_validation.csv", stringsAsFactors = F)
+prices <- read.csv("data/raw/sell_prices.csv", stringsAsFactors = F)
+```
+
+
+```{r Import preocessd data, include=FALSE}
+stat_total <- readRDS("data/processed/stat_total.rds")
+
+aggregation_level_1 <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_1.rds")
+aggregation_level_2 <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_2.rds")
+aggregation_level_3 <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_3.rds")
+aggregation_level_4 <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_4.rds")
+aggregation_level_5 <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_5.rds")
+aggregation_level_6 <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_6.rds")
+aggregation_level_7 <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_7.rds")
+aggregation_level_8 <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_8.rds")
+aggregation_level_9 <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_9.rds")
+aggregation_level_10 <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_10.rds")
+aggregation_level_11 <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_11.rds")
+```
+
+# Calendar
+```{r}
+calendar$date <- as.Date(calendar$date)
+str(calendar)
+```
+
+```{r}
+DT::datatable(calendar)
+
+```
+
+# Prices
+
+```{r}
+str(prices)
+head(prices)
+
+prices %>% count(store_id, item_id)
+
+head(prices)
+
+ddply(.data = prices[1:564, c("store_id", "item_id", "sell_price")],
+      .variables = .(store_id, item_id),
+      .fun = dplyr::mutate, price_diff = sell_price - lag(sell_price))
+
+# TODO
+# Να κολλήσω αυτά τα columns στο stat_total!
+# Nα μελετήσω kernels από kaggle και να τους βάλω εδώ (γραφήματα, ιδέες κλπ)
+
+prices %>% 
+  group_by(store_id, item_id) %>% 
+  summarise(Min_price = min(sell_price), Median_price = median(sell_price), 
+            Mean_price = mean(sell_price), Max_price = max(sell_price), sd(sell_price))
+
+```
+
+
+```{r}
+prices_item <- prices %>% dplyr::filter(item_id == "HOBBIES_1_011", store_id == "CA_1")
+
+head(prices_item)
+dim(prices_item)
+
+ggplot(prices_item) + geom_line(aes(wm_yr_wk, sell_price))
+
+prices_item_per_day <- merge(x = prices_item, y = calendar[,c("wm_yr_wk", "date")], by = "wm_yr_wk")
+
+head(prices_item_per_day)
+
+ggplot(prices_item_per_day) + geom_line(aes(as.Date(date), sell_price))
+
+```
+
+
+
+# Explore sales data hirearhy
+(add image with data hierarhy tree here)
+
+Hierarhical forecasting
+
+## Aggregation level 1: Unit sales of all products, aggregated for all stores/states - 1 time series
+
+```{r}
+df <- data.frame(total_sales = c(aggregation_level_1, rep(NA, 28 + 28)),
+                 dates = calendar$date)
+
+ggplot(df, aes(dates, total_sales)) + 
+  
+  geom_line(color = palette_light()[[1]], alpha = 0.5) +
+  
+  geom_rect(xmin = as.numeric(calendar$date[1]) , xmax = as.numeric(calendar$date[1913]),
+            ymin = 0, ymax = 60000,
+            fill = palette_light()[[5]], alpha = 0.01) + 
+  
+  annotate("text", x = calendar$date[47], y = 50000,
+           color = palette_light()[[1]], label = "Train Region") +
+  
+  annotate("text", x = calendar$date[1919], y = 50000,
+           color = palette_light()[[1]], label = "Test Region") +
+  
+  labs(title = "Total sales", x = "") +
+  theme_tq()
+
+
+ggplot(df, aes(dates, total_sales)) + 
+  
+  geom_line() + 
+  scale_x_date(breaks = df$dates[seq(1, nrow(df), 40)])+
+  theme(axis.text.x = element_text(angle = 90))+
+  ggtitle("Aggreagation level 1: Total sales")
+
+```
+
+## Aggregation level 2: Unit sales of all products, aggregated for each State - 3 time series
+
+```{r}
+DT::datatable(aggregation_level_2)
+
+df <- pivot_longer(data = aggregation_level_2, cols = starts_with("d"))
+df <- merge(x = df, y = calendar[,c("d", "date")], by.x = "name", by.y = "d")
+
+ggplot(df, aes(date, value)) + 
+  geom_line() + 
+  facet_wrap(~state_id)+
+  ggtitle("Aggreagation level 2: Total sales per state")
+
+```
+ 
+
+## Aggregation level 3:  Unit sales of all products, aggregated for each store - 10 time series
+
+```{r}
+DT::datatable(aggregation_level_3)
+
+df <- pivot_longer(data = aggregation_level_3, cols = starts_with("d"))
+df <- merge(x = df, y = calendar[,c("d", "date")], by.x = "name", by.y = "d")
+
+
+ggplot(df, aes(date, value)) + 
+  geom_line() + 
+  facet_wrap(~store_id)+
+  ggtitle("Aggreagation level 3: Total sales per store")
+
+```
+
+## Aggregation level 4:  Unit sales of all products, aggregated for each category - 3 time series
+
+```{r}
+DT::datatable(aggregation_level_4)
+
+df <- pivot_longer(data = aggregation_level_4, cols = starts_with("d"))
+df <- merge(x = df, y = calendar[,c("d", "date")], by.x = "name", by.y = "d")
+head(df)
+
+ggplot(df, aes(date, value)) + 
+  geom_line() + 
+  facet_wrap(~cat_id)+
+  ggtitle("Aggreagation level 4: Total sales per category")
+
+```
+
+## Aggregation level 5:  Unit sales of all products, aggregated for each department - 7 time series
+
+```{r}
+DT::datatable(aggregation_level_5)
+
+df <- pivot_longer(data = aggregation_level_5, cols = starts_with("d_"))
+df <- merge(x = df, y = calendar[,c("d", "date")], by.x = "name", by.y = "d")
+
+
+ggplot(df, aes(date, value)) + 
+  geom_line() + 
+  facet_wrap(~dept_id)+
+  ggtitle("Aggreagation level 5: Total sales per department")
+
+```
+
+## Aggreagtion level 6: Unit sales of all products, aggregated for each State and category - 9 time series
+
+```{r}
+
+DT::datatable(aggregation_level_6)
+
+df <- pivot_longer(data = aggregation_level_6, cols = starts_with("d_"))
+df <- merge(x = df, y = calendar[,c("d", "date")], by.x = "name", by.y = "d")
+
+
+ggplot(df, aes(date, value, col = as.factor(cat_id))) + 
+  geom_line() + 
+  facet_wrap(~state_id)+
+  ggtitle("Aggreagation level 6: Total sales per State")
+
+
+ggplot(df, aes(date, value, col = as.factor(state_id))) + 
+  geom_line() + 
+  facet_wrap(~cat_id)+
+  ggtitle("Aggreagation level 6: Total sales per Category")
+
+```
+
+## Aggreagtion level 7:  Unit sales of all products, aggregated for each State and department - 21 time series
+
+```{r}
+DT::datatable(aggregation_level_7)
+
+df <- pivot_longer(data = aggregation_level_7, cols = starts_with("d_"))
+df <- merge(x = df, y = calendar[,c("d", "date")], by.x = "name", by.y = "d")
+
+head(df)
+
+ggplot(df, aes(date, value, col = as.factor(dept_id))) + 
+  geom_line() + 
+  facet_wrap(~state_id)+
+  ggtitle("Aggreagation level 7: Total sales per State")
+
+
+ggplot(df, aes(date, value, col = as.factor(state_id))) + 
+  geom_line() + 
+  facet_wrap(~dept_id)+
+  ggtitle("Aggreagation level 7: Total sales per Department")
+
+```
+
+## Aggreagation level 8: Unit sales of all products, aggregated for each store and category - 30 time series
+
+```{r}
+DT::datatable(aggregation_level_8)
+
+df <- pivot_longer(data = aggregation_level_8, cols = starts_with("d_"))
+df <- merge(x = df, y = calendar[,c("d", "date")], by.x = "name", by.y = "d")
+
+
+ggplot(df, aes(date, value, col = as.factor(cat_id))) + 
+  geom_line() + 
+  facet_wrap(~store_id)+
+  ggtitle("Aggreagation level 8: Total sales per Store")
+
+
+ggplot(df, aes(date, value, col = as.factor(store_id))) + 
+  geom_line() + 
+  facet_wrap(~cat_id, ncol = 1)+
+  ggtitle("Aggreagation level 8: Total sales per Category")
+
+```
+
+## Aggreagation level 9:  Unit sales of all products, aggregated for each store and department - 70 time series
+
+```{r}
+DT::datatable(aggregation_level_9)
+
+df <- pivot_longer(data = aggregation_level_9, cols = starts_with("d_"))
+df <- merge(x = df, y = calendar[,c("d", "date")], by.x = "name", by.y = "d")
+
+head(df)
+
+ggplot(df, aes(date, value, col = as.factor(dept_id))) + 
+  geom_line() + 
+  facet_wrap(~store_id)+
+  ggtitle("Aggreagation level 9: Total sales per Store")
+
+
+ggplot(df, aes(date, value, col = as.factor(store_id))) + 
+  geom_line() + 
+  facet_wrap(~dept_id, ncol = 2)+
+  ggtitle("Aggreagation level 9: Total sales per Department")
+
+```
+
+## Aggreagation level 10: Unit sales of product x, aggregated for all stores/states - 3,049 time series
+
+There are in Total 3,049 different items.
+
+
+```{r}
+DT::datatable(aggregation_level_10)
+
+df <- pivot_longer(data = aggregation_level_10[sample(x = 1:nrow(aggregation_level_10), size =4), ],
+                   cols = starts_with("d_"))
+df <- merge(x = df, y = calendar[,c("d", "date")], by.x = "name", by.y = "d")
+head(df)
+
+ggplot(df, aes(date, value, col = as.factor(item_id))) + 
+  geom_line() + 
+  ggtitle("Aggreagation level 10: Total sales per item (sample of 20 items)")
+```
+
+## Aggreagation level 11: Unit sales of product x, aggregated for each State - 9,147 time series
+
+```{r message=FALSE, warning=FALSE}
+DT::datatable(aggregation_level_11)
+
+df <- pivot_longer(data = aggregation_level_11, cols = starts_with("d_"))
+head(df)
+
+df %>%
+  group_by(item_id, state_id) %>% 
+  summarise(Min = min(value), Median = median(value), Mean =  mean(value), Max = max(value), Total = sum(value))
+ 
+
+```
+
+## Aggreagation level 12: Unit sales of product x, aggregated for each State - 30,490 time series
+
+```{r message=FALSE, warning=FALSE}
+DT::datatable(head(sales))
+
+```
+
+
+# Time series statistics
+Υπάρχουν `r nrow(stat_total)` χρονοσειρές.
+
+Το μοναδικό κλειδί του datasets είναι το Item_id μαζί με το Store_id.
+Δηλαδή κάθε προϊόν υπάρχει σε κάθε κατάστημα.
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(stat_total,10))
+```
+
+```{r}
+DT::datatable(stat_total)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
