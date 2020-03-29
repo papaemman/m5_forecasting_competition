@@ -1,6 +1,6 @@
 ##########################################
 #                                        #
-#  Experiment: Prophet facebook package  #
+#  Experiment: Name                      #
 #                                        #
 ##########################################
 
@@ -24,7 +24,7 @@ time_series_b <- readRDS(file = "data/processed/time_series_b.rds")
 cl = registerDoSNOW(makeCluster(spec = 6, type = "SOCK", outfile = ""))
 
 # Get forecasts using the wrapper_frc_methods(x, fh, b_names)
-frc_total <- foreach(tsi = 1:nrow(sales),
+frc_total <- foreach(tsi = 1:length(time_series_b),
                      .combine = 'rbind', 
                      .packages = c('zoo','randomForest','RSNNS','forecast','smooth')) %dopar% wrapper_frc_methods(x = time_series_b[[tsi]], fh = 28, b_names = b_names)
 

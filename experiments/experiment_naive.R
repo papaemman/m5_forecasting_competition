@@ -26,7 +26,7 @@ cl = registerDoSNOW(makeCluster(spec = 6, type = "SOCK", outfile = ""))
 # Get forecasts using the wrapper_frc_methods(x, fh, b_names)
 frc_total <- foreach(tsi = 1:nrow(sales),
                      .combine = 'rbind', 
-                     .packages = c('zoo','randomForest','RSNNS','forecast','smooth')) %dopar% wrapper_frc_methods(x = time_series_b[[tsi]], fh = 28, b_names = b_names)
+                     .packages = c('zoo','randomForest','RSNNS','forecast','smooth')) %dopar% naive_frc_method(x = time_series_b[[tsi]], fh = 28, b_names = b_names)
 
 # Save forecastings
 saveRDS(object = frc_total, file = "data/forecastings/frc_total_naive.RDS")

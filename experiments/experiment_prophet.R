@@ -69,11 +69,25 @@ exp_prophet <- rbind_submission_file(submission_file = exp_prophet)
 write.csv(x = exp_prophet, file = "data/submissions/exp_prophet_submission_final.csv", row.names = F)
 
 
+# Round
+exp_prophet <- read.csv("data/submissions/exp_prophet_submission.csv", stringsAsFactors = F)
+exp_prophet[, setdiff(colnames(exp_prophet), "id") ] <- round(x = exp_prophet[, setdiff(colnames(exp_prophet), "id")] )
+exp_prophet <- rbind_submission_file(submission_file = exp_prophet)
+write.csv(x = exp_prophet, file = "data/submissions/exp_prophet_submission_final_round.csv", row.names = F)
+
+
 # Floor
 exp_prophet <- read.csv("data/submissions/exp_prophet_submission.csv", stringsAsFactors = F)
 exp_prophet[, setdiff(colnames(exp_prophet), "id") ] <- floor(x = exp_prophet[, setdiff(colnames(exp_prophet), "id")] )
 exp_prophet <- rbind_submission_file(submission_file = exp_prophet)
 write.csv(x = exp_prophet, file = "data/submissions/exp_prophet_submission_final_floor.csv", row.names = F)
+
+
+# Ceiling
+exp_prophet <- read.csv("data/submissions/exp_prophet_submission.csv", stringsAsFactors = F)
+exp_prophet[, setdiff(colnames(exp_prophet), "id") ] <- ceiling(x = exp_prophet[, setdiff(colnames(exp_prophet), "id")] )
+exp_prophet <- rbind_submission_file(submission_file = exp_prophet)
+write.csv(x = exp_prophet, file = "data/submissions/exp_prophet_submission_final_ceiling.csv", row.names = F)
 
 
 # Div 2

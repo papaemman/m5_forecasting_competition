@@ -50,7 +50,8 @@ saveRDS(object = frc_total, file = "data/processed/frc_total_l.RDS")
 frc_total <- readRDS("data/processed/frc_total_l.RDS")
 
 
-# 2. Global time series (get training data from multiple time series, but make predictions for every time series in bottom level)
+
+# 2. Global time series forecasting (get training data from multiple time series, but make predictions for every time series in bottom level)
 
 # Get forecasts for global models
 frc_total_g <- ML_Global(fh = 28, ni = 12, nwindows = 3)
@@ -78,29 +79,24 @@ x_var[is.na(x_var$event_type_1)==F,]$holiday <- 1
 x_var <- x_var[,c("snap","holiday")]
 
 # 1. Exponential smoothing
-es_f <- es(insample_top, h=28)$forecast 
+es_f <- smooth_es(x = insample_top, h = 28)
 
 # 2. Exponential smoothing with external variables
 esx_f <- es(insample_top, xreg=x_var, h=28)$forecast
 
 # 3. ARIMA
-arima_f <- forecast(auto.arima(insample_top), h=28)$mean 
+arima_f <- auto_arima(x = insample_top, h = 28)
 
 # 4. ARIMA with external variables
 arimax_f <- forecast(auto.arima(insample_top,
                                 xreg = as.matrix(head(x_var, length(insample_top)))),
                      h=28, xreg=as.matrix(tail(x_var, 28)))$mean 
 
+## Note: My functions smooth_es() and auto_arima(), can't get external regressor as arguments, so I have to call the code here
 
 
-## Calculate historical proportion for TOP-DOWN approach 
-
-# Note: Divide the total sales of each product for the last 28 days, with the total sales of the last 28 days
-
-proportions <- unlist(lapply(X = c(1:length(time_series_b)), 
-                             FUN = function(x) {
-                               sum(tail(as.numeric(sales[x,7:ncol(sales)]),28))/sum(tail(insample_top, 28))
-                             }))
+## Import historical proportions data
+proportions <- readRDS("data/processed/historical_proportions_level_1.rds")
 
 # Mulpiply the forecasting values for total predictions, with historical proportions to get the forecasting for each item_id
 frc_total$ES_td <- unlist(lapply(c(1:length(time_series_b)), function(x) es_f*proportions[x]))
@@ -108,11 +104,13 @@ frc_total$ESX <- unlist(lapply(c(1:length(time_series_b)), function(x) esx_f*pro
 frc_total$ARIMA_td <- unlist(lapply(c(1:length(time_series_b)), function(x) arima_f*proportions[x]))
 frc_total$ARIMAX <- unlist(lapply(c(1:length(time_series_b)), function(x) arimax_f*proportions[x]))
 
-# Get forecasts for combination approaches
+
+## Ensembles: Get forecasts for combination approaches (Average  the TOP-Down + Bottom-Up approaches)
 frc_total$Com_b <- (frc_total$ES_bu+frc_total$ARIMA_bu)/2
 frc_total$Com_t <- (frc_total$ES_td+frc_total$ARIMA_td)/2
 frc_total$Com_tb <- (frc_total$ES_bu+frc_total$ES_td)/2
 frc_total$Com_lg <- (frc_total$MLP_l+frc_total$MLP_g)/2
+
 
 
 ## 3. Combine all forecasts and save them ----
