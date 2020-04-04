@@ -39,5 +39,10 @@ opts <- list()
 opts$user_name <- "panagiotis"
 
 
+## 02. General helper functions ----
 
+igc <- function(){
+  invisible(gc())
+  invisible(gc())
+}
 
