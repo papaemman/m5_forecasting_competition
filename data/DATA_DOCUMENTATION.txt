@@ -9,10 +9,49 @@ sales -> time_series_b -> stat_total
 
 Competition's data provided by hosts
 
+
 1. sales_train_validation.csv
+
+30490  1919
+
+                          id        item_id   dept_id  cat_id store_id  state_id d_1 d_2 d_3 ....     
+HOBBIES_1_001_CA_1_validation	HOBBIES_1_001	HOBBIES_1	HOBBIES	    CA_1	      CA	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	...
+HOBBIES_1_002_CA_1_validation	HOBBIES_1_002	HOBBIES_1	HOBBIES	    CA_1	      CA	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	...	
+HOBBIES_1_003_CA_1_validation	HOBBIES_1_003	HOBBIES_1	HOBBIES	    CA_1	      CA	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	...
+HOBBIES_1_004_CA_1_validation	HOBBIES_1_004	HOBBIES_1	HOBBIES	    CA_1	      CA	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	...
+HOBBIES_1_005_CA_1_validation	HOBBIES_1_005	HOBBIES_1	HOBBIES	    CA_1	      CA	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	...
+HOBBIES_1_006_CA_1_validation	HOBBIES_1_006	HOBBIES_1	HOBBIES	    CA_1	      CA	0	0	0	0	0	0	0	0	0	0	0	0 0	0	0	0	0	0	0	0	0	0	0	0	0	...
+
+
 2. sales_test_validation.csv
+
+
 3. sell_prices.csv
+
+6841121       4
+
+store_id       item_id wm_yr_wk sell_price
+    CA_1 HOBBIES_1_001    11325       9.58
+    CA_1 HOBBIES_1_001    11326       9.58
+    CA_1 HOBBIES_1_001    11327       8.26
+    CA_1 HOBBIES_1_001    11328       8.26
+    CA_1 HOBBIES_1_001    11329       8.26
+    CA_1 HOBBIES_1_001    11330       8.26
+
+
+
 4. calendar.csv
+
+1969   14
+
+        date wm_yr_wk   weekday wday month year   d event_name_1 event_type_1 event_name_2 event_type_2 snap_CA snap_TX snap_WI
+1 2011-01-29    11101  Saturday    1     1 2011 d_1                                                           0       0       0
+2 2011-01-30    11101    Sunday    2     1 2011 d_2                                                           0       0       0
+3 2011-01-31    11101    Monday    3     1 2011 d_3                                                           0       0       0
+4 2011-02-01    11101   Tuesday    4     2 2011 d_4                                                           1       1       0
+5 2011-02-02    11101 Wednesday    5     2 2011 d_5                                                           1       0       1
+6 2011-02-03    11101  Thursday    6     2 2011 d_6                                                           1       1       1
+
 
 ------------------------------------------------------
 
