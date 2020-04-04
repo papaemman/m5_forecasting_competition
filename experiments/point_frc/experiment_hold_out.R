@@ -53,10 +53,10 @@ colnames(frc_total)
 
 
 plot_forecastings(forecasting_file = frc_total, method = "ma_v2",
-                  item_id = "HOBBIES_1_001", store_id = "CA_1")
+                  item_id = "HOBBIES_1_008", store_id = "CA_1")
 
 
-## Evaluate experiment's forecastings
+  ## Evaluate experiment's forecastings
 tic()
 scores <- evaluate_experiment(frc_total = frc_total, b_names = b_names, evaluation_file_name_prefix = "exp_naive")
 toc() # ~ 20 minutes

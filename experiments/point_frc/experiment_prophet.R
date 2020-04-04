@@ -1,8 +1,8 @@
-##########################################
-#                                        #
-#  Experiment: Prophet facebook package  #
-#                                        #
-##########################################
+######################################################
+#                                                    #
+#  Experiment: Prophet facebook package / Bottom up  #
+#                                                    #
+######################################################
 
 # Source dependencies 
 lapply(X = paste0("modules/", list.files(path = "modules/")), FUN = source)
