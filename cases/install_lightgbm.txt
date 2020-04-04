@@ -1,0 +1,54 @@
+=========================
+Instalation instructions
+=========================
+
+package:  lightgbm (Microsoft)
+
+Documentation: https://lightgbm.readthedocs.io/en/latest/R/index.html
+
+> R.version
+platform       x86_64-pc-linux-gnu         
+arch           x86_64                      
+os             linux-gnu                   
+system         x86_64, linux-gnu   
+language       R                           
+version.string R version 3.6.0 (2019-04-26)
+
+---------------------------------------
+
+Steps:
+
+1. Install git 
+(probably already installed! Type man git in console to check it)
+
+2. Install cmake 
+(Guide: https://vitux.com/how-to-install-cmake-on-ubuntu-18-04/)
+- from Ubuntu software store
+- or from command line using: sudo snap install cmake
+- or from official website (https://cmake.org/)
+
+
+3.  Build and install R-package with the following commands:
+
+Open terminal and type: 
+~$ git clone --recursive https://github.com/microsoft/LightGBM
+~$ cd LightGBM
+~$ Rscript build_r.R
+
+
+4. When your package installation is done, you can check quickly if your LightGBM R-package is working by running the following:
+
+> R
+> library(lightgbm)
+> data(agaricus.train, package='lightgbm')
+> train <- agaricus.train
+> dtrain <- lgb.Dataset(train$data, label=train$label)
+> params <- list(objective="regression", metric="l2")
+> model <- lgb.cv(params, dtrain, 10, nfold=5, min_data=1, learning_rate=1, early_stopping_rounds=10)
+
+
+
+
+
+
+
