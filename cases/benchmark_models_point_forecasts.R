@@ -39,7 +39,7 @@ calendar <- read.csv("data/raw/calendar.csv", stringsAsFactors = F)
 # 3. Prices data
 prices <- read.csv("data/raw/sell_prices.csv", stringsAsFactors = F)
 
-
+  
 ## 02. Explore data ----
 
 # Sales data
