@@ -1,0 +1,146 @@
+=================================
+DOCUMENTATION: benchmark_models.R 
+=================================
+
+Directory : cases/benchmark_models_probabilistic_forecasts.R
+Size      : 1350 lines
+
+
+
+// 00. Load packages //
+
+
+// 01. Read data //
+
+
+// 02. Define helper functions //
+
+  - intervals(x)                        : Count intervals with consequitevely 0s
+  - demand(x)                           : Keep only demand values (ie only non-negative values)
+  - statistics(tsid)                    : Calculate statistics for a time series id (use data from data/processed/time_series_b.rds object)
+
+
+// 03. Define Benchmark methods I (local time series forecasting) //
+
+-> Statistical Models
+
+  - 1. forecast::ses()       : Exponential smoothing forecasts
+  - 2. forecast::naive()     : Naive forecasts
+  - 3. forecas::snaive()     : Seasonal naive forecasts
+  - 4. forecast::ets()       : Exponential smoothinf state space model
+  - 5. forecast::auto.arima  : ARIMA
+  - 6. kernel                : kernel method
+  
+
+-> Function to use all the local benchmark models at once
+
+  - benchmark_f(x, fh)  : Takes an element x = time_series_b[[i]] and fh (forecasting horizon) and applies multiple forecasting methods to this element
+
+                       
+// 04. Prepare the time_series_b object from sales_train_validation.csv dataset//
+
+Create the time_series_b object.
+
+This object contains a list of lists, having in each element of the list
+the information about one time series (item_id).
+
+time_series_b_uncertainty also contains time_series for every other aggreagation level
+
+
+
+// 05. Estimate statistics and the dollar sales used for weighting //
+
+Calculate descirptive statistics for sales demand time series,
+for every product in every store (aggregation level 12)
+
+
+// 06. Estimate forecasts for benchmark models //
+
+ARIMA < ETS < sNaive < SES < Kernel < Naive
+
+
+    fh quantile      Naive   sNaive        SES      ETS    ARIMA   Kernel Agg_Level_1 Agg_Level_2
+
+1    1    0.005  34530.603 26471.91  34526.432 30430.79 30344.67 18732.16       Total           X
+2    1    0.025  38180.229 29242.31  38177.035 32454.52 32343.35 21605.60       Total           X
+3    1    0.165  44022.389 33677.05  44020.760 35694.02 35542.76 27571.64       Total           X
+4    1    0.250  45797.965 35024.88  45796.812 36678.58 36515.14 29654.00       Total           X
+5    1    0.500  49795.000 38059.00  49794.917 38894.95 38704.08 33732.00       Total           X
+6    1    0.750  53792.035 41093.12  53793.022 41111.32 40893.02 38689.00       Total           X
+7    1    0.835  55567.611 42440.95  55569.073 42095.89 41865.40 42146.44       Total           X
+8    1    0.975  61409.771 46875.69  61412.798 45335.39 45064.81 48847.00       Total           X
+9    1    0.995  65059.397 49646.09  65063.401 47359.12 47063.50 52886.60       Total           X
+
+10   2    0.005  28207.882 25982.91  28203.099 27608.47 27524.06 18732.16       Total           X
+11   2    0.025  33369.233 28753.31  33365.573 29735.99 29723.24 21605.60       Total           X
+12   2    0.165  41631.295 33188.05  41629.434 33141.64 33243.59 27571.64       Total           X
+13   2    0.250  44142.339 34535.88  44141.025 34176.70 34313.51 29654.00       Total           X
+14   2    0.500  49795.000 37570.00  49794.917 36506.74 36722.03 33732.00       Total           X
+15   2    0.750  55447.661 40604.12  55448.808 38836.78 39130.55 38689.00       Total           X
+16   2    0.835  57958.705 41951.95  57960.399 39871.84 40200.47 42146.44       Total           X
+17   2    0.975  66220.767 46386.69  66224.260 43277.49 43720.82 48847.00       Total           X
+18   2    0.995  71382.118 49157.09  71386.734 45405.01 45920.00 52886.60       Total           X
+
+19   3    0.005  23356.289 23755.91  23350.890 26843.70 26603.77 18732.16       Total           X
+20   3    0.025  29677.626 26526.31  29673.498 29070.18 28842.90 21605.60       Total           X
+21   3    0.165  39796.544 30961.05  39794.450 32634.24 32427.21 27571.64       Total           X
+22   3    0.250  42871.933 32308.88  42870.457 33717.44 33516.57 29654.00       Total           X
+23   3    0.500  49795.000 35343.00  49794.917 36155.86 35968.85 33732.00       Total           X
+24   3    0.750  56718.067 38377.12  56719.376 38594.28 38421.12 38689.00       Total           X
+25   3    0.835  59793.456 39724.95  59795.383 39677.49 39510.48 42146.44       Total           X
+26   3    0.975  69912.374 44159.69  69916.336 43241.54 43094.79 48847.00       Total           X
+27   3    0.995  76233.711 46930.09  76238.944 45468.02 45333.92 52886.60       Total           X
+
+28   4    0.005  19266.206 23445.91  19260.239 27005.54 27029.87 18732.16       Total           X
+29   4    0.025  26565.457 26216.31  26560.897 29326.77 29277.33 21605.60       Total           X
+30   4    0.165  38249.778 30651.05  38247.469 33042.48 32874.97 27571.64       Total           X
+31   4    0.250  41800.930 31998.88  41799.306 34171.78 33968.38 29654.00       Total           X
+32   4    0.500  49795.000 35033.00  49794.917 36713.97 36429.78 33732.00       Total           X
+33   4    0.750  57789.070 38067.12  57790.527 39256.15 38891.17 38689.00       Total           X
+34   4    0.835  61340.222 39414.95  61342.364 40385.45 39984.58 42146.44       Total           X
+35   4    0.975  73024.543 43849.69  73028.936 44101.16 43582.22 48847.00       Total           X
+36   4    0.995  80323.794 46620.09  80329.594 46422.39 45829.68 52886.60       Total           X
+
+37   5    0.005  15662.770 28929.91  15656.280 29979.28 30840.47 18732.16       Total           X
+38   5    0.025  23823.581 31700.31  23818.623 32391.53 33089.68 21605.60       Total           X
+39   5    0.165  36887.049 36135.05  36884.543 36252.96 36690.12 27571.64       Total           X
+40   5    0.250  40857.358 37482.88  40855.597 37426.54 37784.38 29654.00       Total           X
+41   5    0.500  49795.000 40517.00  49794.917 40068.41 40247.70 33732.00       Total           X
+....
+
+
+// 07. Evaluate forecasts //
+
+Evaluation metric: ????
+
+
+We need 4 files to calulcate the WRMSSE:
+1. frc_total  : forecastings                                                    - y hat
+2. sales_out  : the ground thruth values for validation days (d_1914 - d_1941)  - y true
+3. stat_total : statistics about time series (to get the dollar volume sales)   - weight
+4. sales      : previous sales for scaling the error                            - scale                              
+ 
+
+Calculate error for every one of the 12 aggregation levels:
+
+-> Level 12 : Unit sales of product x, aggregated for each store                   - 30,490
+-> Level 1  : Unit sales of all products, aggregated for all stores/states	       - 1
+-> Level 2  : Unit sales of all products, aggregated for each State                - 3
+-> Level 3  : Unit sales of all products, aggregated for each store                - 10
+-> Level 4  : Unit sales of all products, aggregated for each category             - 3  
+-> Level 5  : Unit sales of all products, aggregated for each department           - 7
+-> Level 6  : Unit sales of all products, aggregated for each State and category   - 9
+-> Level 7  : Unit sales of all products, aggregated for each State and department - 21
+-> Level 8  : Unit sales of all products, aggregated for each store and category   - 30
+-> Level 9  : Unit sales of all products, aggregated for each store and department - 70
+-> Level 10 : Unit sales of product x, aggregated for all stores/states            - 3,049
+-> Level 11 : Unit sales of product x, aggregated for each State                   - 9,147
+
+
+
+// 9. Export benchmarks' forecasts in Kaggle format //
+
+For every mid=method_id (column) in frc_total object,
+create and save a submission file with the appropriate format
+
+
