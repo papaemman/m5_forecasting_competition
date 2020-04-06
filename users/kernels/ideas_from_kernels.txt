@@ -5,6 +5,9 @@ Documentation: Notebooks from kaggle
 
 // nb_attack_of_the_data_table.R //
 
+- 1. First create features from raw data files (calendar, selling_prices)
+- 2. Add empty observations (cols) corresponding to vaildation, evaluation dataset and melt sales dataset
+- 3. 
 
 Calendar:
 - drop columns: day, weekday, keep only numbers from d
