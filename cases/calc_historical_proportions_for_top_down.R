@@ -33,3 +33,30 @@ saveRDS(object = proportions, file = "data/processed/historical_proportions_leve
 
 
 
+## Aggregation level 2: Count the total sales for each day aggregated for each State ----
+
+
+aggregated_sales <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_2.rds")
+
+# How to calculate proportions:
+# Divide the total sales for each product for the last 28 days, with the total sales of the last 28 days for every State
+
+proportions <- unlist(lapply(X = c(1:length(time_series_b)), 
+                             
+                             FUN = function(x) {
+                               
+                               # x = 1
+                               cat("\r",paste("ts id:", x))
+                               aggregated_sales_state <- aggregated_sales["state_id" == time_series_b[[x]]$state_id, 7:ncol(aggregated_sales)]
+                               sum(tail(as.numeric(sales[x,7:ncol(sales)]),28))/sum(tail(aggregated_sales_state, 28))
+                             }))
+
+head(proportions)
+str(proportions)
+
+saveRDS(object = proportions, file = "data/processed/historical_proportions_level_1.rds")
+
+
+
+
+
