@@ -1,0 +1,106 @@
+====================================
+DOCUMENTATION: Feature Engineering 
+====================================
+
+
+// 1. Calendar //
+
+Pre-processsing steps
+- drop columns: day, weekday
+- Keep only numeric part from d column (as integer)
+
+
+
+Features
+
+- endoce event_name_1 and event_type_1 as integer variables
+
+- is_weekend
+
+- days as integers
+  - day (week day, month day)
+  - week 
+  - month
+  - quarter
+  - year
+  
+  
+- fourier transformations for seasonal events
+  - day of the week, day of the month
+  - week of the month, week of the year
+  - month of the year
+  - season of the year
+
+
+
+-----------------------------------------------------------------------------------------------
+
+// 2. Prices //
+
+New features: 
+
+- sell_price_diff (from week to week),
+- sell_price_rel_diff
+- sell_price_cumrel
+- sell_price_roll_sd7
+
+
+
+-----------------------------------------------------------------------------------------------
+
+// 3. Sales //
+
+- Drop "validation" from id column
+- Add empty columns corresponding to forecastings observations (2*28)
+- Reshape from wide in long format (melt)
+
+- Create features from demand:
+  
+  1. lags            : 7, 28, 29
+  2. window features : 7, 30, 90, 180
+     - mean
+     - sd, var
+     - min, max
+  
+  
+  
+  1. demand lag_t28               : demand before 28 days, because the forecasting horizon is 28
+  2. rolling_mean_t7   of lag_t28 
+  3. rolling_mean_t30  of lag_t28
+  4. rolling_mean_t60  of lag_t28
+  5. rolling_mean_t90  of lag_t28
+  6. rolling_mean_t180 of lag_t28
+  7. rolling_sd_t7     of lag_t28
+  8. rolling_sd_t30    of lag_t28
+
+
+
+
+
+- Encode categorical variables as integers (item_id, dept_id, cat_id, store_id, state_id)
+
+
+--> Wide format:
+
+                id        item_id   dept_id  cat_id store_id   state_id   d_1 d_2 d_3 d_4  d_5
+HOBBIES_1_001_CA_1	HOBBIES_1_001	HOBBIES_1	HOBBIES	    CA_1	       CA	  0	    0	   0   0	  0	
+HOBBIES_1_002_CA_2	HOBBIES_1_002	HOBBIES_1	HOBBIES	    CA_1	       CA	  0   	0	   0   0	  0	
+HOBBIES_1_002_CA_3	HOBBIES_1_003	HOBBIES_1	HOBBIES	    CA_1	       CA	  0 	  0	   0   0	  0
+HOBBIES_1_002_CA_4	HOBBIES_1_004	HOBBIES_1	HOBBIES	    CA_1	       CA	  0	    0	   0   0	  0	
+HOBBIES_1_002_CA_5	HOBBIES_1_005	HOBBIES_1	HOBBIES	    CA_1	       CA	  0	    0	   0	 0	  0	
+
+
+--> Long format: 
+
+id                        item_id    dept_id   cat_id  store_id state_id    d   demand   lag_t28
+HOBBIES_1_001_CA_1  HOBBIES_1_001  HOBBIES_1  HOBBIES  CA_1           CA    1       0         NA
+HOBBIES_1_001_CA_1  HOBBIES_1_001  HOBBIES_1  HOBBIES  CA_1           CA    2       0         NA
+HOBBIES_1_001_CA_1  HOBBIES_1_001  HOBBIES_1  HOBBIES  CA_1           CA    3       0         NA
+HOBBIES_1_001_CA_1  HOBBIES_1_001  HOBBIES_1  HOBBIES  CA_1           CA    4       0         NA
+HOBBIES_1_001_CA_1  HOBBIES_1_001  HOBBIES_1  HOBBIES  CA_1           CA    5       0         NA
+...
+HOBBIES_1_002_CA_1  HOBBIES_1_002  HOBBIES_1  HOBBIES  CA_1           CA    1       0         NA
+HOBBIES_1_002_CA_1  HOBBIES_1_002  HOBBIES_1  HOBBIES  CA_1           CA    2       0         NA
+HOBBIES_1_002_CA_1  HOBBIES_1_002  HOBBIES_1  HOBBIES  CA_1           CA    3       0         NA
+HOBBIES_1_002_CA_1  HOBBIES_1_002  HOBBIES_1  HOBBIES  CA_1           CA    4       0         NA
+HOBBIES_1_002_CA_1  HOBBIES_1_002  HOBBIES_1  HOBBIES  CA_1           CA    5       0         NA
