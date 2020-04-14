@@ -3,14 +3,11 @@ DOCUMENTATION
 ================
 
 
-// Experiment Workflow: How to make a kaggle submission. //
+// R Project structure: //
 
-1. Copy experiment_template.R script and rename it
-2. Write forecasting method function (modules/)
-3. Define the wrapper experiment function for methods want to use (script: modules/experimentation_helpers.R)
-4. Run the experiment.R script and save forecastings in data/forecastings directory
-5. Evaluate forecastings (save WRMSSE scores)
-6. Make submission file  (save submission file)
+
+
+
 
 
 
@@ -48,6 +45,22 @@ evaluate_experiment() : This function calculates the error for every aggregation
 13. "Average"
 
 After all the above calulcations, finds the "Average" which is the Kaggle's WRMSSE score.
+
+
+
+---------------------------------------------------------------
+
+// Experiment Workflow: How to make a kaggle submission. //
+
+1. Copy experiment_template.R script and rename it
+2. Write forecasting method function (modules/)
+3. Define the wrapper experiment function for methods want to use (script: modules/experimentation_helpers.R)
+4. Run the experiment.R script and save forecastings in data/forecastings directory
+5. Evaluate forecastings (save WRMSSE scores)
+6. Make submission file  (save submission file)
+
+
+
 
 
 ------------------------------------------------
