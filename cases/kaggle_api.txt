@@ -1,0 +1,59 @@
+============
+Kaggle API 
+============
+
+DOCUMENATION: https://github.com/Kaggle/kaggle-api
+
+
+---------------------------
+// Installation //
+
+~$ pip install kaggle
+
+
+-------------------------
+// API credentials //
+
+Go to https://www.kaggle.com/<username>/account in API section and select "Create New API token",
+this will triger the download of a kagge.json file,
+place this file in the location ~/.kaggle/kaggle.json
+
+Run ~$ chmod 600 /home/user7/.kaggle/kaggle.json
+to make kaggle.json file don't readable from other users
+
+---------------------------
+
+// Commands //
+
+The command line tool supports the following commands:
+
+~$ kaggle competitions {list, files, download, submit, submissions, leaderboard}
+~$ kaggle datasets {list, files, download, create, version, init}
+~$ kaggle kernels {list, init, push, pull, output, status}
+~$ kaggle config {view, set, unset}
+
+
+----------------------------------
+
+// Examples: //
+
+Search competions
+~$ kaggle competitions list -s health
+
+List competitions
+~$ kaggle competitions list --category gettingStarted
+
+
+_____________
+Competition
+______________
+
+1. Submit to a competition
+~$ kaggle competitions submit -c m5-forecasting-accuracy -f submission.csv -m "Message"
+
+2. List competition submissions
+~$ kaggle competitions submissions -c m5-forecasting-accuracy
+
+3. Get competition Leaderboard
+~$ kaggle competitions leaderboard -c m5-forecasting-accuracy -s
+
