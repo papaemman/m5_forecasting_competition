@@ -6,6 +6,7 @@
 
 ## Source dependencies
 # source("modules/main.R")
+
 library(data.table)
 library(RcppRoll)
 
@@ -13,7 +14,7 @@ library(RcppRoll)
 create_sales_data <- function(){
   
   # Import data 
-  sales <- fread("data/raw/sales_train_validation.csv", stringsAsFactors = F)
+  sales <- fread("data/raw/sales_train_validation.csv")
   
   
   # Add empty observations
@@ -23,16 +24,35 @@ create_sales_data <- function(){
   
   sales <- cbind(sales, empty_dt)
   
+  
   # Sales: Reshape
-  sales <- melt(sales,
+  sales <- data.table::melt(sales,
                 id.vars = c("id", "item_id", "dept_id", "cat_id", "store_id", "state_id"), 
                 variable.name = "d", value = "demand")
   
   sales[, d := as.integer(substring(d, 3))]
-  sales[store_id == "CA_1"][order(item_id, d)]
+
+  
+  # sales[ , .N, by=c("item_id", "store_id")]
+  # dim(sales)  [1] 60034810        8
+  # 1969*30490
   
   # Sales: Reduce size
   # sales <- sales[d >= 1000]
+  
+  # Drop initial zero-demand periods for every product
+  stat_total <- readRDS("data/processed/stat_total.rds")
+  stat_total <- as.data.table(stat_total)
+  stat_total[, first_day := 1914 - lngth]
+  stat_total_short <- stat_total[,c("item_id", "store_id", "first_day")]
+  
+  sales[stat_total_short, on = c("item_id", "store_id"), nomatch = 0]
+  
+  
+  
+  
+  # Drop long zero-demand periods for every product
+  nb_month <- 6
   
   
   # Sales: Feature construction

@@ -13,6 +13,9 @@ library(purrr)
 library(data.table)
 library(RcppRoll)
 
+# TODO Να βάλω σαν feature την σχετική διαφορά από την μέση τιμή των άλλων
+# και όχι μόνο την διαφορά από την απόλυτη τιμή σαν απόλυτο αριθμό.
+
 
 create_prices_data <- function(){
   
@@ -21,7 +24,7 @@ create_prices_data <- function(){
   
   # head(prices)
   # dim(prices) # 6841121, 4
-  
+  prices[ , .N, by = c("item_id", "store_id")]
   
   
   ## FE 01: Item prices compared with other stores ----
