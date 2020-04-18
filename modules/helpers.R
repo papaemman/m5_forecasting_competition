@@ -35,7 +35,7 @@ intervals <- function(x){
 
 ## 02. Function: demand(x) ----
 
-# Keep only demand values (ie only non-negative values)
+# Keep only demand values (ie only positive values)
 
 demand <- function(x){
   y <- x[x!=0]
@@ -45,6 +45,7 @@ demand <- function(x){
 # Test demand()
 # x <- c(1,2,3,4,5,0,0,6,0)
 # demand(x)
+# [1] 1 2 3 4 5 6
 
 
 ## 03. Function: recompose(x,y1,y2,k) ----
