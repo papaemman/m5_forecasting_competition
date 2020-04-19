@@ -379,7 +379,7 @@ server <- function(input, output) {
                    "HOBBIES_2_001 - HOBBIES_2_149",
                    "HOUSEHOLD_1_001 - HOUSEHOLD_1_541",
                    "HOUSEHOLD_2_001 - HOUSEHOLD_2_516",
-                   "FOODS_1_001 - FOODS_1_155",
+                   "FOODS_1_001 - FOODS_1_219",
                    "FOODS_2_001 - FOODS_2_399", 
                    "FOODS_3_001 - FOODS_3_827"))
     })

@@ -432,7 +432,7 @@ server <- function(input, output) {
             
             p <- plot_data(ts_data = ts_data, calendar = calendar,
                            frc_val = h5_frc_val[dept_id == input$h_department, ],
-                           h5_frc_eval = h5_frc_eval[dept_id == input$h_department, ],
+                           frc_eval = h5_frc_eval[dept_id == input$h_department, ],
                            input)
 
             
@@ -546,8 +546,8 @@ server <- function(input, output) {
             # h12_frc_eval <- frc[type=="evaluation", lapply(.SD, sum), by = .(item_id, store_id), .SDcols = cols]
             
             if(input$add_forecastings){
-                h12_frc_val <- frc[type=="validation", .(item_id, store_id, F1:F28)]
-                h12_frc_eval <- frc[type=="evaluation", .(item_id, store_id, F1:F28)]
+                h12_frc_val <- frc[type == "validation",]
+                h12_frc_eval <- frc[type == "evaluation",]
             }
             
             
@@ -567,7 +567,7 @@ server <- function(input, output) {
                    "HOBBIES_2_001 - HOBBIES_2_149",
                    "HOUSEHOLD_1_001 - HOUSEHOLD_1_541",
                    "HOUSEHOLD_2_001 - HOUSEHOLD_2_516",
-                   "FOODS_1_001 - FOODS_1_155",
+                   "FOODS_1_001 - FOODS_1_219",
                    "FOODS_2_001 - FOODS_2_399", 
                    "FOODS_3_001 - FOODS_3_827"))
     })
