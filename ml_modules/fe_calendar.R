@@ -5,17 +5,15 @@
 ##################################
 
 ## Source dependencies
-source("modules/main.R")
+# source("modules/main.R")
 
-library(data.table)
-
-
+# library(data.table)
 
 
 create_calendar_data <- function(){
   
   # Import data 
-  calendar <- fread("data/raw/calendar.csv", na.strings = c("", "_"), stringsAsFactors = F)
+  calendar <- fread("data/raw/calendar.csv", na.strings = c("", "_"))
   calendar$date <- as.Date(calendar$date)
   
   
@@ -26,7 +24,7 @@ create_calendar_data <- function(){
                    weekend = ifelse(wday %in% c(1,2), T, F),                                                          # Weekend
                    month_quarter = ifelse(month%%3 == 0, 3, month%%3),                                                # Month
                    quart = quarter(date),                                                                             # Quarter
-                   semester = ifelse(month<=6, -1, 1)                                                                 # Semester 
+                   semester = ifelse(month<=6, 0, 1)                                                                  # Semester 
            )][]  
   
   
@@ -77,6 +75,9 @@ create_calendar_data <- function(){
   
   
   # 4. Calendar Events -----
+  
+  # Day has event
+  calendar[, has_event := !is.na(event_type_1)]
   
   # Events with duration
   
@@ -143,32 +144,8 @@ create_calendar_data <- function(){
                   event_type_2 = NULL,
                   d = as.integer(substring(d, 3)))]
   
+  gc()
   return(calendar)
   
 }
 
-
-
-View(calendar)
-
-dim(calendar) # 1969,   51
-
-format(object.size(calendar),unit = "auto")
-saveRDS(object = calendar, file = "data/calendar_full.rds")
-
-
-
-####################################################################
-
-## Plot Features
-
-library(ggplot2)
-
-ggplot(calendar[1:41]) +
-  # geom_line(aes(date, wday_rbf_3), col = "blue") +
-  # geom_line(aes(date, wday_s1)) + 
-  geom_line(aes(d, wday_s3), col = "red") 
-
-
-table(calendar$event_name_1)
-table(calendar$event_type_1)
