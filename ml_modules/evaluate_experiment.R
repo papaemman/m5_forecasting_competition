@@ -4,34 +4,73 @@
 #                                #
 ##################################
 
+# 1. Make forecasings (submission file)
 
-head(train)
-lgb <- readRDS(file = "model_lgbm_v2.rds")
+#---------------------------
+cat("Forecasting...\n")
 
-## 06. Create Submission file -----
-te <- create_dt(FALSE)
+View(test %>% filter())
 
-test
+test_one_item <- test %>% filter(item_id == 1, store_id ==1)
 
-for (day in as.list(seq(fday, length.out = 2*h, by = "day"))){
-  cat(as.character(day), " ")
-  tst <- te[date >= day - max_lags & date <= day]
-  create_fea(tst)
-  tst <- data.matrix(tst[date == day][, c("id", "sales", "date") := NULL])
-  # te[date == day, sales := predict(m_lgb, tst)]
-  te[date == day, sales := 1.02*predict(m_lgb, tst)] # Instead of previous row use this magic multiplier
-}
+View(test_one_item)
+test_one_item
+colnames(test_one_item)
 
+dim(test_one_item)
+class(test_one_item)
+test_one_item <- data.table(test_one_item)
 
 
 
-pred <- predict(lgb, data.matrix(test[, x, with = FALSE]))
+# Make predicitons keeping NAs in many features
+for (i in 1:56){
+  
+  i = 1
+  cat(i, "\r")
+
+  # Make predition
+  test_one_item[i, "demand"] <- predict(lgb_model, data.matrix(test_one_item[i,features]))
+  
+  # Lag prediction
+  test_one_item[i+1,"lag_t1"] <- test_one_item[i,"demand"]
+  test_one_item[i+1,"lag_t2"] <- test_one_item[i,"demand"]
+  test_one_item[i+1,"lag_t3"] <- test_one_item[i,"demand"]
+  test_one_item[i+1,"lag_t4"] <- test_one_item[i,"demand"]
+  test_one_item[i+1,"lag_t5"] <- test_one_item[i,"demand"]
+  test_one_item[i+1,"lag_t6"] <- test_one_item[i,"demand"]
+  test_one_item[i+1,"lag_t7"] <- test_one_item[i,"demand"]
+  test_one_item[i+1,"lag_t8"] <- test_one_item[i,"demand"]
+  test_one_item[i+1,"lag_t14"] <- test_one_item[i,"demand"]
+  test_one_item[i+1,"lag_t21"] <- test_one_item[i,"demand"]
+  test_one_item[i+1,"lag_t28"] <- test_one_item[i,"demand"]
+  
+  if(i>=8){
+    
+    test_one_item[i,"mean_last_month"] <- (test_one_item[i,"lag_t7"] + lag_t14 + lag_t21 + lag_t28)/4 ,
+    
+    test_one_item[i, "rolling_mean_lag7_t7"] <- roll_meanr(test_one_item$lag_t7[1:i], 7),
+    
+  }
+  
+  
+  }
+
+
+pred <- predict(lgb_model, data.matrix(test[, features, with = FALSE]))
 test[, demand := pmax(0, pred)]
 
 test_long <- dcast(test, id ~ F, value.var = "demand")
 
+
+# Sort based on sample_submissionion id column
+
+sample_submission <- fread("data/pnt_submissions/sample_submission.csv")
 submission <- merge(sample_submission[, .(id)], 
                     test_long[, colnames(sample_submission), with = FALSE], 
                     by = "id")
 
-fwrite(submission, file = "data/pnt_submissions/experiment_04.csv", row.names = FALSE)
+
+fwrite(submission, file = "data/pnt_submissions/experiment_lgb.csv", row.names = FALSE)
+
+
