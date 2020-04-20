@@ -122,7 +122,7 @@ create_fea <- function(dt) {
 cat("Preprocessing datasets...\n")
 
 # Import and merge datasets
-tr <- create_dt()
+tr <- create_dt(is_train = TRUE)
 free()
 
 # Create features
@@ -184,7 +184,7 @@ free()
 cat("Forecasting...\n")
 
 # Import dataset required for forecasting
-te <- create_dt(FALSE)
+te <- create_dt(is_train = FALSE)
 
 # dim(te) 3536840      16
 
