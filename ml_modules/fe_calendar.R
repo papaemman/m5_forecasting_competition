@@ -10,12 +10,16 @@
 # library(data.table)
 
 
-create_calendar_data <- function(){
-  
-  # Import data 
-  calendar <- fread("data/raw/calendar.csv", na.strings = c("", "_"))
-  calendar$date <- as.Date(calendar$date)
-  
+## Crate extra calendar features
+
+# calendar <- fread("data/raw/calendar.csv", na.strings = c("", "_"))
+# calendar$date <- as.Date(calendar$date)
+# calendar <- create_calendar_features(calendar)
+# saveRDS(calendar, "data/raw/calendar.rds")
+
+
+
+create_calendar_features <- function(calendar){
   
   # 1. Sesonal Features
   

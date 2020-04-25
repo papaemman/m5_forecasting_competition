@@ -14,12 +14,14 @@
 # library(RcppRoll)
 
 
+## Crate extra prices features
 
-create_prices_data <- function(){
-  
-  ## Import data ----
-  prices <- fread("data/raw/sell_prices.csv")
-  
+# prices <- fread("data/raw/prices.csv")
+# prices <- create_prices_features(prices)
+# saveRDS(prices, "data/raw/prices.rds")
+
+
+create_prices_features <- function(prices){
   
   
   ## FE 01: Item prices compared within stores ----
