@@ -15,8 +15,7 @@
 library(hts)
 library(ggplot2)
 library(dplyr)
-library(plotly)
-library(smooth)
+library(tictoc)
 
 ## 01. Import data ----
 sales_raw <- read.csv("data/raw/sales_train_validation.csv", stringsAsFactors = F) 
@@ -50,7 +49,6 @@ nb_days <- nb_days -1
 sales_long <- t(sales[,-1])
 colnames(sales_long) <- sales[,1]
 
-
 calendar_short <- calendar %>% filter(d %in% rownames(sales_long))
 
 bts <- ts(data = sales_long,
@@ -58,14 +56,13 @@ bts <- ts(data = sales_long,
           frequency = 365)
  
 dim(bts)
-
 # nrow : number of days
 # ncol : number of bottom level timeseries
 
 
 ## Define groups and hierarhies
 
-head(sales$id)
+# head(sales$id)
 
 # 1.  Total
 # 2.  State
@@ -96,8 +93,8 @@ groups_names <- matrix(data = c(state_id, store_id, cat_id, dept_id, state_cat_i
                                 item_id, item_state_id),
                        ncol = 30490, byrow = TRUE)
 
-groups_names[, 1:6]
-dim(bts)
+# groups_names[, 1:6]
+# dim(bts)
 
 y <- gts(bts, groups = groups_names)
 y
@@ -146,6 +143,7 @@ x_var <- x_var[,c("snap","holiday")]
 ## 1. auto.arima
 model <- auto.arima(y = aggts(y, levels = 0), xreg = as.matrix(head(x_var, nb_days)))
 model <- auto.arima(y = aggts(y, levels = 5)[,3], xreg = as.matrix(head(x_var, nb_days)))
+model <- auto.arima(y = aggts(y)[,6], xreg = as.matrix(head(x_var, nb_days)))
 
 frc <- forecast(model, h = 28, xreg = as.matrix(tail(x_var, 28)))$mean
 
@@ -162,7 +160,7 @@ frc <- forecast(model, h = 28, xreg = as.matrix(tail(x_var, 28)))$mean
 
 ## Plot forecastings
 df <- data.frame(index = 1:(nb_days+28),
-                 demand = c(aggts(y, levels = 0), rep(NA,28)),
+                 demand = c(aggts(y)[,6], rep(NA,28)),
                  frc = c(rep(NA, nb_days), frc))
 
 p <- ggplot(df) +
@@ -267,27 +265,33 @@ h <- 28
 ally <- aggts(y)
 allf <- matrix(NA, nrow = h, ncol = ncol(ally))
 
+## Make forecastings 
 
-# Make forecastings
+# Note: auto.arima = The default arguments are designed for rapid estimation of models for many time series.
+Sys.time()
 
 for(i in 1:ncol(ally)){
   
-  # i = 1
+  # i = 6
   cat(i, "\r")
   
   model <- auto.arima(y = ally[,i],
-                      allowdrift = T,
-                      allowmean = T,
-                      lambda = "auto", 
-                      xreg = as.matrix(head(x_var, nb_days)),
-                      parallel = T, num.cores = 8)
+                      xreg = as.matrix(head(x_var, nb_days)))
   
-  allf[,i] <- forecast(model, h = h, xreg = as.matrix(tail(x_var, 28)))$mean
+  allf[,i] <- forecast(model, h = h, xreg = as.matrix(tail(x_var, h)))$mean
+  
+  if(i%%1000 == 0) saveRDS(object = allf, file = paste0("data/pnt_forecastings/allf_", format(Sys.time(), "%d.%m.%Y_%H:%M:%S"),".rds"))
 
 }
   
+saveRDS(object = allf, file = "data/allf.rds")
+
 allf <- ts(allf, start =  c(2016, 116), frequency = 365)
 
+Sys.time()
+
+
+## Optimal Combination for base forecastings (create reconciled forecastings)
 
 weigths <- read.csv("data/raw/weights_validation.csv")
 weights_vec <- weigths$Weight
