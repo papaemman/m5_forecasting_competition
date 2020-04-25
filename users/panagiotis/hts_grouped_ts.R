@@ -14,20 +14,32 @@
 ## 00. Load packages ----
 library(hts)
 library(ggplot2)
+library(dplyr)
 library(plotly)
+library(smooth)
 
 ## 01. Import data ----
 sales_raw <- read.csv("data/raw/sales_train_validation.csv", stringsAsFactors = F) 
+
 calendar <- read.csv("data/raw/calendar.csv", stringsAsFactors = F, na.strings = "")
+calendar$date <- as.Date(calendar$date)
+
 
 ## Keep the last nb_days from sales
-# nb_days <- 365*2
-nb_days <- ncol(sales_raw)-7
+# nb_days <- 365
+nb_days <- ncol(sales_raw)-6
+
 sales <- sales_raw[, c(1, (1919-nb_days+1):1919)]
 dim(sales)
-# View(sales)
 
+# View(head(sales))
 rm(sales_raw)
+
+## Drop extra day in leap year (2016)
+calendar <- calendar %>% dplyr::filter(!date == as.Date("2016-02-29"))
+sales$d_1858 <- NULL
+nb_days <- nb_days -1
+
 
 ## 02. Define bts (bottom time series) matrix ----
 
@@ -37,13 +49,18 @@ rm(sales_raw)
 
 sales_long <- t(sales[,-1])
 colnames(sales_long) <- sales[,1]
-bts <- ts(data = sales_long, start = 1, end = nb_days, frequency = 1)
 
+
+calendar_short <- calendar %>% filter(d %in% rownames(sales_long))
+
+bts <- ts(data = sales_long,
+          start =  c(as.numeric(format(calendar_short[1,"date"], "%Y")), as.numeric(format(calendar_short[1,"date"], "%j"))),
+          frequency = 365)
+ 
 dim(bts)
-# [1]   100 30490
-# 100 days (rows), for 30490 bottom level time series (columns)
-bts[1:5, 1:10]
 
+# nrow : number of days
+# ncol : number of bottom level timeseries
 
 
 ## Define groups and hierarhies
@@ -80,68 +97,70 @@ groups_names <- matrix(data = c(state_id, store_id, cat_id, dept_id, state_cat_i
                        ncol = 30490, byrow = TRUE)
 
 groups_names[, 1:6]
-
 dim(bts)
 
 y <- gts(bts, groups = groups_names)
-
 y
 
-## Grouped Time Series 
-# 12 Levels 
-# Number of groups at each level: 1 3 10 3 7 9 21 30 70 3049 9147 30490 
-# Total number of series: 42840 
-# Number of observations per series: 100 
-# Top level series: 
-#   Time Series:
-#   Start = 1 
-# End = 100 
-# Frequency = 1 
-# [1] 41790 51146 45533 38340 31988 32684 31779 36307 48927 47832 34389 30446 31349 32466 37639 49104 50831 41714 34928 39340 35424 40193
-# [23] 55040 46893 36804 38513 39353 44584 44222 53715 48337 46152 37702 36545 36436 40392 50857 52081 37328 33981 34068 34615 37649 47887
-# [45] 50915 37259 36536 38458 41459 39325 52322 57218 40562 37727 37032 38267 40887 52711 51421 42035 40117 36606 35009 39652 46181 47825
-# [67] 37360 35475 34786 34003 45611 53863 46360 36041 33857 32359 34681 45536 52672 56425 40418 39683 39134 38116 43220 56340 53856 42427
-# [89] 39069 35193 37529 41789 48362 51640 38059 37570 35343 35033 40517 48962
+## Note: Be carefull fro the leap year!
+# y
+# 
+# head(sales_long[,1])
+# calendar %>% dplyr::filter(d == "d_1")
+# format(as.Date("2011-01-29"), "%j") # 029  #
+# 
+# tail(sales_long[,1])
+# calendar %>% dplyr::filter(d == "d_1913")
+# format(as.Date("2016-04-24"), "%j") # 115  #
 
 
-# Check data
-aggts(y, levels = 1)
-aggts(y, levels = 2)
-aggts(y, levels = c(3,4))
+
+## 03. External regressors ----
 
 str(y)
 
 y$labels$G1
 y$labels$G10
 
+## Check data
+aggts(y, levels = 1)
+aggts(y, levels = 2)
+aggts(y, levels = c(3,4))
 aggts(y, levels = "G3")
-
 
 # Plot data
 plot(aggts(y, levels = 2))
 plot(aggts(y, levels = "G1"))
 
 
-# Get external regressors
-x_var <- calendar
+## Get external regressors
+x_var <- calendar_short
 x_var$snap <- x_var$snap_CA+x_var$snap_WI+x_var$snap_TX
 x_var$holiday <- 0
 x_var[!is.na(x_var$event_type_1),]$holiday <- 1
 x_var <- x_var[,c("snap","holiday")]
 
 
-## Test forecasting methods
+## 04. Test forecasting methods -----
 
-# prophet
-
-# auto.arima
-model <- auto.arima(y = aggts(y, levels = 0), xreg = as.matrix(head(x_var,nb_days)))
+## 1. auto.arima
+model <- auto.arima(y = aggts(y, levels = 0), xreg = as.matrix(head(x_var, nb_days)))
+model <- auto.arima(y = aggts(y, levels = 5)[,3], xreg = as.matrix(head(x_var, nb_days)))
 
 frc <- forecast(model, h = 28, xreg = as.matrix(tail(x_var, 28)))$mean
 
 # frc <- forecast(model, h = 28, xreg = as.matrix(tail(x_var, 28)))$lower[,2]
 # frc <- forecast(model, h = 28, xreg = as.matrix(tail(x_var, 28)))$upper[,1]
 
+## 2. smooth::es (wrong model)
+model <- es(y = aggts(y, levels = 0), xreg = as.matrix(head(x_var, nb_days)))
+frc <- forecast(model, h = 28, xreg = as.matrix(tail(x_var, 28)))$mean
+
+## 3. prophet
+
+
+
+## Plot forecastings
 df <- data.frame(index = 1:(nb_days+28),
                  demand = c(aggts(y, levels = 0), rep(NA,28)),
                  frc = c(rep(NA, nb_days), frc))
@@ -154,7 +173,7 @@ p <- ggplot(df) +
 ggplotly(p)
 
 
-## 03. Make forecastings ----
+## 05. Make forecastings ----
 
 # https://rdrr.io/cran/hts/man/forecast.gts.html
 
@@ -168,29 +187,46 @@ View(forecast.gts)
 
 
 # Forecast 28-step-ahead using the optimal combination method
-fcasts <- forecast(y,
-                   h = 28,
-                   method = "comb",     
-                   weights = "ols",     # c("wls", "ols", "mint", "nseries")
-                   fmethod = "arima",
-                   algorithms = "lu",   # c("lu", "cg", "chol", "recursive", "slm")
-                   covariance = "shr",  # c("shr", "sam")
-                   nonnegative = TRUE,
-                   keep.fitted = FALSE,
-                   keep.resid = FALSE, 
-                   positive = FALSE,
-                   lambda = "auto",
-                   xreg = as.matrix(head(x_var,nb_days)),
-                   newxreg = as.matrix(tail(x_var, 28)),
-                   parallel = TRUE, num.cores = 6)
+fcasts <- hts::forecast.gts(y,
+                            h = 28,
+                            method = "comb",     
+                            weights = "ols",       # c("wls", "ols", "mint", "nseries")
+                            fmethod = "arima",     # c("ets", "arima", "rw")
+                            algorithms = "lu",     # c("lu", "cg", "chol", "recursive", "slm")
+                            covariance = "shr",    # c("shr", "sam"), used only for weight = "mint"
+                            keep.fitted = FALSE,
+                            keep.resid = FALSE, 
+                            positive = FALSE,
+                            lambda = "auto",
+                            FUN = NULL, 
+                            xreg = as.matrix(head(x_var,nb_days)),
+                            newxreg = as.matrix(tail(x_var, 28)),
+                            parallel = TRUE, num.cores = 8)
 
 saveRDS(fcasts, file = "fcasts.rds")
 
-# plot the forecasts including the last ten historical years
-plot(fcasts, include = 10, levels = c(1,2))
+
+## Custom forecasting function
+
+# fcasts <- hts::forecast.gts(y,
+#                             h = 28,
+#                             method = "comb",     
+#                             weights = "ols",       # c("wls", "ols", "mint", "nseries")
+#                             algorithms = "lu",     # c("lu", "cg", "chol", "recursive", "slm")
+#                             covariance = "shr",    # c("shr", "sam")
+#                             keep.fitted = FALSE,
+#                             keep.resid = FALSE, 
+#                             positive = FALSE,
+#                             lambda = "auto",
+#                             FUN = function(x) tbats(x, use.parallel = FALSE),
+#                             parallel = TRUE, num.cores = 8)
 
 
-## 04. Create submission file  ----
+# plot the forecasts including the last 56 historical observations
+plot(fcasts, include = 56, levels = c(1,2))
+
+
+## 06. Create submission file  ----
 
 fcasts
 class(fcasts)
@@ -223,3 +259,48 @@ dim(sample_submission)
 dim(forecasts)
 
 write.csv(forecasts, file = "data/pnt_submissions/experiment_hts_comb.csv",row.names = F)
+
+## 07. Forecastings Optimal combination  ----
+
+y
+h <- 28
+ally <- aggts(y)
+allf <- matrix(NA, nrow = h, ncol = ncol(ally))
+
+
+# Make forecastings
+
+for(i in 1:ncol(ally)){
+  
+  # i = 1
+  cat(i, "\r")
+  
+  model <- auto.arima(y = ally[,i],
+                      allowdrift = T,
+                      allowmean = T,
+                      lambda = "auto", 
+                      xreg = as.matrix(head(x_var, nb_days)),
+                      parallel = T, num.cores = 8)
+  
+  allf[,i] <- forecast(model, h = h, xreg = as.matrix(tail(x_var, 28)))$mean
+
+}
+  
+allf <- ts(allf, start =  c(2016, 116), frequency = 365)
+
+
+weigths <- read.csv("data/raw/weights_validation.csv")
+weights_vec <- weigths$Weight
+  
+y.f <- combinef(allf,
+                groups = get_groups(y),
+                weights = NULL ,         #  NULL or weights_vec
+                keep ="bottom",          # c("gts", "all", "bottom")
+                algorithms = "lu"        # c("lu", "cg", "chol", "recursive", "slm")
+                )
+
+str(y.f)
+plot(y.f)
+
+
+
