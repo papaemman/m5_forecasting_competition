@@ -4,24 +4,51 @@
 #                                #
 ##################################
 
+## 00. Load packages
 
-library(dplyr)
+library(tidyverse)
 library(data.table)
+library(RcppRoll)
 library(lightgbm)
 library(tictoc)
 
+## Source dependencies
+source("ml_modules/combine_training_data.R")
+source("ml_modules/fe_sales.R")
 
 
-## 01, Import training dataset
+## Define parameters
 
-# train <- readRDS("../kitematic/temp/train.rds")
+nrows = Inf                        # How many sales data to import
+fh = 28                            # Forecasting horizon
+max_lags = 366                     # Max lags (features)
+tr_last = 1913                     # Training last day
+fday = as.IDate("2016-04-25")      # Forecasting day (first day)
 
-head(train)
-dim(train)   # 40150972       89
-str(train)
+
+## Create datasets
+tr <- create_dt(is_train = TRUE, nrows = nrows, fh = fh, max_lags = max_lags, tr_last = tr_last, fday = fday)
+gc()
+
+## Create features
+tr <- create_fea(dt = tr)
+gc()
 
 
-# Select Features to be use in training
+
+## Save train dataset and remove other datasets
+tr
+format(object.size(tr), unit = "auto") #  "22.4 Gb"
+saveRDS(object = tr, file = "../kitematic/temp/train.rds")
+
+
+
+## Select Features to be use in training
+# tr <- readRDS("../kitematic/temp/train.rds")
+tr
+dim(tr)
+str(tr)
+
 
 features <- c("store_id", "item_id",
               
@@ -57,16 +84,20 @@ features <- c("store_id", "item_id",
               "rolling_mean_lag28_t7", "rolling_mean_lag28_t30",
               "rolling_sd_lag28_t7", "rolling_sd_lag_28_t30",
               
-              "rleLength",
+              "ADI", "CV2", "pz", "Type", "Low25", "Mean", "Median", "Up25" ,
+              
+              # "rleLength",
               
               "snap")
 
-setdiff(colnames(train), features)
-# Don't include: [1] "d"      "id"     "demand"
+
+setdiff(features, colnames(tr))
+setdiff(colnames(tr), features)
+# Don't include: [1]  "d"       id"        "sales"     "rleLength"
+
 
 
 # Which of these features should be treaten as categorical
-
 categoricals <- c("store_id", "item_id", "dept_id", "cat_id", "state_id",  
                   
                   "wday", "day_month", "day_quarter", "day_year",
@@ -79,29 +110,30 @@ categoricals <- c("store_id", "item_id", "dept_id", "cat_id", "state_id",
                   
                   "snap_CA", "snap_TX", "snap_WI", "snap",
                   
-                  "nb_stores", "rleLength",
+                  "nb_stores",
+                  
+                  # "rleLength",
                   
                   "best_price")
 
 
 
-## Separate submission data and reconstruct id columns
-test <- train[d >= 1914]
-test[, id := paste(id, ifelse(d <= 1941, "validation", "evaluation"), sep = "_")]
-test[, F := paste0("F", d - 1913 - 28 * (d > 1941))]
+
+## // Keep 1 month of validation data
+
+# flag <- tr$year < 1914 & tr$d >= 1914 - 28
+# flag <- tr
+# valid_data <- data.matrix(train[flag, features, with = FALSE])
+# valid <- lgb.Dataset(data = valid_data, categorical_feature = categoricals, label = train[["demand"]][flag])
+
+# Training data
+# flag <- train$d < 1914 - 28
+# y <- train[["demand"]][flag]
 
 
-# Keep 1 month of validation data
-flag <- train$d < 1914 & train$d >= 1914 - 28
-valid_data <- data.matrix(train[flag, features, with = FALSE])
-valid <- lgb.Dataset(data = valid_data, categorical_feature = categoricals, label = train[["demand"]][flag])
+## Train without validation data
 
-
-# Final preparation of training data
-flag <- train$d < 1914 - 28
-y <- train[["demand"]][flag]
-
-train <- data.matrix(train[flag, features, with = FALSE])
+tr <- data.matrix(tr[,..features,])
 train <- lgb.Dataset(train, categorical_feature = categoricals, label = y)
 
 gc()
