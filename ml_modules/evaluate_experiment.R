@@ -4,73 +4,55 @@
 #                                #
 ##################################
 
-# 1. Make forecasings (submission file)
+## 06. Forecasting ----
 
-#---------------------------
 cat("Forecasting...\n")
 
-View(test %>% filter())
 
-test_one_item <- test %>% filter(item_id == 1, store_id ==1)
+# Import dataset required for forecasting
+te <- create_dt(is_train = FALSE)
 
-View(test_one_item)
-test_one_item
-colnames(test_one_item)
-
-dim(test_one_item)
-class(test_one_item)
-test_one_item <- data.table(test_one_item)
+# dim(te) 3536840      16
 
 
+# SOS: For every day, using the te (test) dataset and create_fea() function,
+#      create features, taking into consideration the predictions (as the ground truth value for the demand)
 
-# Make predicitons keeping NAs in many features
-for (i in 1:56){
+
+for (day in as.list(seq(fday, length.out = 2*h, by = "day"))){
   
-  i = 1
-  cat(i, "\r")
-
-  # Make predition
-  test_one_item[i, "demand"] <- predict(lgb_model, data.matrix(test_one_item[i,features]))
-  
-  # Lag prediction
-  test_one_item[i+1,"lag_t1"] <- test_one_item[i,"demand"]
-  test_one_item[i+1,"lag_t2"] <- test_one_item[i,"demand"]
-  test_one_item[i+1,"lag_t3"] <- test_one_item[i,"demand"]
-  test_one_item[i+1,"lag_t4"] <- test_one_item[i,"demand"]
-  test_one_item[i+1,"lag_t5"] <- test_one_item[i,"demand"]
-  test_one_item[i+1,"lag_t6"] <- test_one_item[i,"demand"]
-  test_one_item[i+1,"lag_t7"] <- test_one_item[i,"demand"]
-  test_one_item[i+1,"lag_t8"] <- test_one_item[i,"demand"]
-  test_one_item[i+1,"lag_t14"] <- test_one_item[i,"demand"]
-  test_one_item[i+1,"lag_t21"] <- test_one_item[i,"demand"]
-  test_one_item[i+1,"lag_t28"] <- test_one_item[i,"demand"]
-  
-  if(i>=8){
-    
-    test_one_item[i,"mean_last_month"] <- (test_one_item[i,"lag_t7"] + lag_t14 + lag_t21 + lag_t28)/4 ,
-    
-    test_one_item[i, "rolling_mean_lag7_t7"] <- roll_meanr(test_one_item$lag_t7[1:i], 7),
-    
-  }
+  ## Test
+  # day= as.Date("2016-04-25")
+  cat(as.character(day), " ")
   
   
-  }
+  # Get a subset from te (test) dataset, with the last 60 days
+  # because all these days required to create the features (lag, roll_means etc)
+  tst <- te[date >= day - max_lags & date <= day]
+  
+  # Create features for this dataset
+  create_fea(tst)
+  
+  # Crate test dataset for the current date
+  tst <- data.matrix(tst[date == day][, c("id", "sales", "date") := NULL])
+  
+  # Make predictions and save them in te (test) dataset. 
+  te[date == day, sales := 1.02*predict(m_lgb, tst)] # magic multiplier by kyakovlev
+  
+  # Iteration: Use again the te dataset to subset the lad 60 days, to create features and make new predictions.
+  
+}
 
 
-pred <- predict(lgb_model, data.matrix(test[, features, with = FALSE]))
-test[, demand := pmax(0, pred)]
 
-test_long <- dcast(test, id ~ F, value.var = "demand")
+## 02. Create submission file ----
 
-
-# Sort based on sample_submissionion id column
-
-sample_submission <- fread("data/pnt_submissions/sample_submission.csv")
-submission <- merge(sample_submission[, .(id)], 
-                    test_long[, colnames(sample_submission), with = FALSE], 
-                    by = "id")
+te[date >= fday
+   ][date >= fday+h, id := sub("validation", "evaluation", id)
+     ][, d := paste0("F", 1:28), by = id
+       ][, dcast(.SD, id ~ d, value.var = "sales")
+         ][, fwrite(.SD, "sub_dt_lgb.csv")]
 
 
-fwrite(submission, file = "data/pnt_submissions/experiment_lgb.csv", row.names = FALSE)
 
 
