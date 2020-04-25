@@ -55,7 +55,7 @@ Open terminal and type:
 > model <- lgb.cv(params, dtrain, 10, nfold=5, min_data=1, learning_rate=1, early_stopping_rounds=10)
 
 
-
+SOS: Close and reopen your project, to be able to find lightgbm pakcage
 
 
 
