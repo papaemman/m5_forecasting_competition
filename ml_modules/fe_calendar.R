@@ -4,11 +4,10 @@
 #                                #
 ##################################
 
-## Source dependencies
-# source("modules/main.R")
 
 # library(data.table)
 # library(RcppRoll)
+# library(dplyr)
 
 
 ## Crate extra calendar features
@@ -193,9 +192,10 @@ create_calendar_features <- function(calendar){
   
   ## 08. Drop unused columns ----
   calendar[, `:=`(date = NULL, 
-                  weekday = NULL)]
-
+                  weekday = NULL,
+                  d = as.integer(substring(d, 3)))]
   
+  calendar[is.na(calendar)] <- 0
   gc()
   return(calendar)
   

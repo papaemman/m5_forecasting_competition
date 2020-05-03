@@ -29,9 +29,10 @@ create_dt <- function(is_train = TRUE, nrows = Inf, fh, max_lags, tr_last, fday)
     
   } else {
     
-    # Import the last max_lags columns from sales train validation dataset 
-    dt <- fread("data/raw/sales_train_validation.csv", nrows = nrows,
-                   drop = paste0("d_", 1:(tr_last-max_lags)))
+    # Import the last max_lags columns from sales train validation dataset, to construct the test dataset
+    dt <- fread("data/raw/sales_train_validation.csv",
+                nrows = nrows,
+                drop = paste0("d_", 1:(tr_last-max_lags)))
     
     # Merge empty column for every forecasting day 
     # (Use NA_real_ because the predictions will be real numbers)
@@ -72,6 +73,7 @@ create_dt <- function(is_train = TRUE, nrows = Inf, fh, max_lags, tr_last, fday)
 }
 
 
+
 # Function create_fea(): create features
 
 add_features <- function(dt) {
@@ -88,6 +90,12 @@ add_features <- function(dt) {
   # Turn non-numerics to integers
   cols <- c("item_id", "dept_id", "cat_id", "store_id", "state_id")
   dt[, (cols) := lapply(.SD, function(z) as.integer(as.factor(z))), .SDcols = cols]
+  
+  # SOS (alphabetical order):
+  # levels(as.factor(dt$dept_id))    # [1] "FOODS_1"     "FOODS_2"     "FOODS_3"     "HOBBIES_1"   "HOBBIES_2"   "HOUSEHOLD_1" "HOUSEHOLD_2"
+  # levels(as.factor(dt$cat_id))     # [1] "FOODS"     "HOBBIES"   "HOUSEHOLD"
+  # levels(as.factor(dt$store_id))   # [1] "CA_1" "CA_2" "CA_3" "CA_4" "TX_1" "TX_2" "TX_3" "WI_1" "WI_2" "WI_3"
+  # levels(as.factor(dt$state_id))   # [1] "CA" "TX" "WI"
   
   
   ## Features from stat_total file
