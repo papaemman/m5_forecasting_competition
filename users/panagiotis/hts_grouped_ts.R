@@ -285,6 +285,7 @@ for(i in 1:ncol(ally)){
 }
   
 saveRDS(object = allf, file = "data/allf.rds")
+
 allf <- readRDS("data/allf_01.05.2020_05_55_02.rds")
 
 dim(allf)
@@ -317,7 +318,7 @@ dim(ensemble_sub)
 
 allf[1:28, 12351:ncol(allf)] <- ensemble_sub
 dim(allf)
-
+class(allf)
 allf <- ts(allf, start =  c(2016, 116), frequency = 365)
 
 Sys.time()
@@ -326,29 +327,52 @@ Sys.time()
 ## Optimal Combination for base forecastings (create reconciled forecastings)
 weigths <- read.csv("data/raw/weights_validation.csv")
 weights_vec <- weigths$Weight
-  
+
+tic()  
 y.f <- combinef(allf,
                 groups = get_groups(y),
                 weights = NULL ,             #  NULL or weights_vec
-                nonnegative = T,
                 keep ="bottom",              # c("gts", "all", "bottom")
-                algorithms = "lu",           # c("lu", "cg", "chol", "recursive", "slm")
-                parallel = T,
-                num.cores = 3)
+                algorithms = "lu"          # c("lu", "cg", "chol", "recursive", "slm")
+                )
 
-saveRDS(y.f, file = "yf.rds")
+saveRDS(y.f, file = "y.f.rds")
+toc()
 
-y.f <- combinef(allf,
+
+tic()  
+y.f.2 <- combinef(allf,
                 groups = get_groups(y),
-                weights = NULL ,              #  NULL or weights_vec
-                nonnegative = T,
-                keep ="bottom",               # c("gts", "all", "bottom")
-                algorithms = "lu",            # c("lu", "cg", "chol", "recursive", "slm")
-                parallel = T,
-                num.cores = 3)
+                weights = weights_vec ,             #  NULL or weights_vec
+                keep ="bottom",              # c("gts", "all", "bottom")
+                algorithms = "lu"          # c("lu", "cg", "chol", "recursive", "slm")
+)
 
-str(y.f)
-plot(y.f)
+saveRDS(y.f, file = "y.f.2.rds")
+toc()
+
+
+str(y.f.2)
+
+
+dim(y.f)
+dim(ensemble_sub)
+
+ensemble_sub[1:3, 1:10]
+y.f[1:3, 1:10]
+
+############33
+
+dim(y.f)
+
+ensemble_sub[1:5, 1:5]
+y.f[1:5,1:5]
+y.f <- as.data.frame(y.f)
+y.f <- t(y.f)
+View(y.f)
+
+y.f$id <- as.character(id_ensemble_sub
+
 
 
 
