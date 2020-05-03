@@ -15,7 +15,7 @@
 # calendar <- fread("data/raw/calendar.csv", na.strings = c("", "_"))
 # calendar$date <- as.Date(calendar$date)
 # calendar <- create_calendar_features(calendar)
-# saveRDS(calendar, "data/raw/calendar.rds")
+# saveRDS(calendar, "data/raw/calendar_full.rds")
 
 
 
@@ -23,12 +23,12 @@ create_calendar_features <- function(calendar){
   
   # 1. Sesonal Features
   
-  calendar[, `:=`(day_month = lubridate::mday(date), day_quarter = lubridate::qday(date),day_year = yday(date))       # Day
-           ][,`:=`(week_month = ceiling(day_month/7), week_quarter = ceiling(day_quarter/7), week_year = week(date),  # Week
-                   weekend = ifelse(wday %in% c(1,2), T, F),                                                          # Weekend
-                   month_quarter = ifelse(month%%3 == 0, 3, month%%3),                                                # Month
-                   quart = quarter(date),                                                                             # Quarter
-                   semester = ifelse(month<=6, 0, 1)                                                                  # Semester 
+  calendar[, `:=`(day_month = lubridate::mday(date), day_quarter = lubridate::qday(date), day_year = yday(date))       # Day
+           ][,`:=`(week_month = ceiling(day_month/7), week_quarter = ceiling(day_quarter/7), week_year = week(date),   # Week
+                   weekend = ifelse(wday %in% c(1,2), T, F),                                                           # Weekend
+                   month_quarter = ifelse(month%%3 == 0, 3, month%%3),                                                 # Month
+                   quart = quarter(date),                                                                              # Quarter
+                   semester = ifelse(month<=6, 0, 1)                                                                   # Semester 
            )][]  
   
   
@@ -142,8 +142,7 @@ create_calendar_features <- function(calendar){
   calendar[, (cols) := lapply(.SD, function(z) as.integer(as.factor(z))), .SDcols = cols]
   calendar[is.na(event_name_1), `:=`(event_name_1=0)][is.na(event_type_1), `:=`(event_type_1=0)]
   
-  calendar[, `:=`(date = NULL, 
-                  weekday = NULL, 
+  calendar[, `:=`(weekday = NULL, 
                   event_name_2 = NULL,
                   event_type_2 = NULL,
                   d = as.integer(substring(d, 3)))]

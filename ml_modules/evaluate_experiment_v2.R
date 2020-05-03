@@ -8,6 +8,7 @@
 library(lightgbm)
 library(data.table)
 library(tictoc)
+library(RcppRoll)
 
 ## Source dependencies
 source("ml_modules/create_data.R")
@@ -35,7 +36,20 @@ gc()
 
 # SOS: For every forecasting day,
 #      using the te (test) dataset and create_fea() function,
-#      create features, taking into consideration the predictions (as the ground truth value for the demand)
+#      create features (for sales column - lags, rolling features etc),
+#      taking into consideration the predictions (as the ground truth value for the demand)
+
+## Build multiple different models
+stat_total <- read.csv("data/processed/stat_total.csv", stringsAsFactors = F)
+stores <- unique(stat_total$store_id)
+departments <- unique(stat_total$dept_id)
+df <- expand.grid(stores,departments, stringsAsFactors = F)
+colnames(df) <- c("store_id", "dept_id")
+head(df)
+
+# Define the order in tr dataset (alphabetical order)
+stores <- c("CA_1", "CA_2", "CA_3", "CA_4", "TX_1", "TX_2", "TX_3", "WI_1", "WI_2", "WI_3")
+departments <- c("FOODS_1", "FOODS_2", "FOODS_3", "HOBBIES_1", "HOBBIES_2", "HOUSEHOLD_1", "HOUSEHOLD_2")
 
 
 for (day in as.list(seq(fday, length.out = 2*fh, by = "day"))){
@@ -52,21 +66,40 @@ for (day in as.list(seq(fday, length.out = 2*fh, by = "day"))){
   tst <- create_sales_features(tst)
   gc()
   
-  # Create test dataset for the current date
-  # Drop unused features
-  tst <- data.matrix(tst[date == day][, c("id", "d", "sales", "date") := NULL])
   
-  # Note: Some big lags may be NA for some products,
-  # because these products may not be available during all this period of time.
-  # sapply(as.data.frame(tst), function(x)sum(is.na(x))) %>% View()
+  for (i in 1:nrow(df)){
+    
+    # Test
+    # i=1
+    
+    store <- df[i,"store_id"]
+    dept <- df[i,"dept_id"]
+    print(paste("Store:", store, "| Dept:", dept))
+    
+    
+    ## Load model
+    lgb_model <- readRDS.lgb.Booster(paste0("models/", store, "_", dept, "_lgb_model.rds"))
+    
+    # Create test dataset for the current date
+    # (select only used features) 
+    tst_day_store_dept <- data.matrix(tst[date == day & store_id == which(store == stores) & dept_id == which(dept == departments), ..features])
+    
+    # Note: Some big lags may be NA for some products,
+    # because these products may not be available during all this period of time.
+    # sapply(as.data.frame(tst), function(x)sum(is.na(x))) %>% View()
+    
+    
+    # Make predictions and save them in te (test) dataset. 
+    # (use magic multiplier in prediction)
+    te[date == day  & store_id == which(store == stores) & dept_id == which(dept == departments), sales := predict(lgb_model, tst_day_store_dept)] 
+    
+    
+    # Iteration: Use again the te (test) dataset to subset the last max_lags days, to create features and make new predictions.
+    
+    
+    
+    }
   
-  
-  # Make predictions and save them in te (test) dataset. 
-  # (use magic multiplier in prediction)
-  te[date == day, sales := 1.01*predict(lgb_model, tst)] 
-  
-  
-  # Iteration: Use again the te (test) dataset to subset the last max_lags days, to create features and make new predictions.
 }
 
 te

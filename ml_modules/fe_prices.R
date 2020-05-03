@@ -16,9 +16,9 @@
 
 ## Crate extra prices features
 
-# prices <- fread("data/raw/prices.csv")
+# prices <- fread("data/raw/sell_prices.csv")
 # prices <- create_prices_features(prices)
-# saveRDS(prices, "data/raw/prices.rds")
+# saveRDS(prices, "data/raw/prices_full.rds")
 
 
 create_prices_features <- function(prices){
@@ -154,6 +154,10 @@ create_prices_features <- function(prices){
   prices <- prices[prices_long, on = c("store_id", "item_id", "wm_yr_wk"), nomatch = 0]
   prices[,i.sell_price := NULL]
   rm(prices_long);gc();
+  
+  
+  ## Deal with NA / NaN
+  prices[is.na(prices)] <- 0
   
   return(prices)
 }

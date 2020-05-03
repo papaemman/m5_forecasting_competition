@@ -1,0 +1,53 @@
+// "../kitematic/temp/lgb_model_temp.rds" //
+
+params <- list(objective = "poisson",
+                metric ="rmse",
+                force_row_wise = TRUE,
+                learning_rate = 0.075,
+                sub_feature = 0.8,
+                sub_row = 0.75,
+                bagging_freq = 1,
+                lambda_l2 = 0.1,
+                nthread = 7)
+
+> lgb_model <- lgb.train(params = params, data = tr,
++                        num_boost_round = 4000,
++                        eval_freq = 200, early_stopping_rounds = 600,
++                        valids = list(valid = valid))
+
+[LightGBM] [Warning] Met categorical feature which contains sparse values. Consider renumbering to consecutive integers started from zero
+[LightGBM] [Info] Total Bins 11662
+[LightGBM] [Info] Number of data points in the train set: 35305139, number of used features: 99
+[LightGBM] [Info] Start training from score 0.495311
+[1]:	valid's rmse:3.51199 
+[201]:	valid's rmse:1.97455 
+[401]:	valid's rmse:1.95525 
+[601]:	valid's rmse:1.95015 
+[801]:	valid's rmse:1.94803 
+[1001]:	valid's rmse:1.94589 
+[1201]:	valid's rmse:1.94431 
+[1401]:	valid's rmse:1.94405 
+[1601]:	valid's rmse:1.94357 
+[1801]:	valid's rmse:1.94319 
+[2001]:	valid's rmse:1.94266 
+[2201]:	valid's rmse:1.94192 
+[2401]:	valid's rmse:1.94238 
+[2601]:	valid's rmse:1.94191 
+[2801]:	valid's rmse:1.94185 
+[3001]:	valid's rmse:1.94192 
+[3201]:	valid's rmse:1.9416 
+[3401]:	valid's rmse:1.94134 
+[3601]:	valid's rmse:1.94117 
+[3801]:	valid's rmse:1.9404 
+[4000]:	valid's rmse:1.94042 
+
+
+Training time: 1.814984 hours
+
+Best score: 1.940335 at 3908 iteration
+
+
+---------------------------------------------------------------------------------------------------
+
+
+
