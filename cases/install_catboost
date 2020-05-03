@@ -1,0 +1,16 @@
+=====================
+Install catboost
+=====================
+
+DOCUMENTATION:
+https://catboost.ai/
+https://github.com/catboost/tutorials
+
+
+> install.packages('devtools')
+
+Linux
+> devtools::install_url("https://github.com/catboost/catboost/releases/download/v0.23/catboost-R-Linux-0.23.tgz", INSTALL_opts = c("--no-multiarch"))
+
+Windows
+> devtools::install_url("https://github.com/catboost/catboost/releases/download/v0.23/catboost-R-Windows-0.23.tgz"", INSTALL_opts = c("--no-multiarch"))

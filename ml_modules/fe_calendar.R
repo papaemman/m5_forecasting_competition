@@ -16,7 +16,7 @@
 # calendar <- fread("data/raw/calendar.csv", na.strings = c("", "_"))
 # calendar$date <- as.Date(calendar$date)
 # calendar <- create_calendar_features(calendar)
-# saveRDS(calendar, "data/raw/calendar.rds")
+# saveRDS(calendar, "data/raw/calendar_full.rds")
 
 
 
@@ -191,13 +191,10 @@ create_calendar_features <- function(calendar){
   
   # calendar %>% select(date,weekday, event_name_1, event_type_1, sporting_event,sporting_event_lead_1, sporting_event_lead_3,cultural_event, national_event, religious_event, has_event) %>% View()
   
-  
   ## 08. Drop unused columns ----
   calendar[, `:=`(date = NULL, 
-                  weekday = NULL, 
-                  event_name_2 = NULL,
-                  event_type_2 = NULL,
-                  d = as.integer(substring(d, 3)))]
+                  weekday = NULL)]
+
   
   gc()
   return(calendar)
