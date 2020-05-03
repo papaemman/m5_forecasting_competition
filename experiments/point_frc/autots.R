@@ -9,6 +9,7 @@
 library(RemixAutoML)
 library(data.table)
 library(dplyr)
+library(tictoc)
 
 # Import datasets
 sales <- fread("data/raw/sales_train_validation.csv")
@@ -33,9 +34,10 @@ x_var[is.na(x_var$event_type_1)==F,]$holiday <- 1
 x_var <- x_var[,c("snap","holiday")]
 
 
+tic()
 
 # forecast for the next 28 days
-frc <- RemixAutoML::AutoTS(
+autots_model <- RemixAutoML::AutoTS(
   data = sales,
   TargetName = "sales",
   DateName = "date",
@@ -46,10 +48,12 @@ frc <- RemixAutoML::AutoTS(
   SLags = 28,
   MaxFourierPairs = 12,
   PrintUpdates = T,
-  NumCores = 5 
+  NumCores = 8
 )
 
-saveRDS(frc, "frc.rds")
+saveRDS(autots_model, "autots_model.rds")
+
+toc()
 
 ## Import historical proportions data
 proportions <- readRDS("data/processed/historical_proportions_level_1.rds")
