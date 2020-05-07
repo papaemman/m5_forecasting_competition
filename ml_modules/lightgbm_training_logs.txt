@@ -1,53 +1,225 @@
-// "../kitematic/temp/lgb_model_temp.rds" //
+-----------------
+Data params
+-----------------
 
-params <- list(objective = "poisson",
-                metric ="rmse",
-                force_row_wise = TRUE,
-                learning_rate = 0.075,
-                sub_feature = 0.8,
-                sub_row = 0.75,
-                bagging_freq = 1,
-                lambda_l2 = 0.1,
-                nthread = 7)
+$max_bin
+[1] 255
 
-> lgb_model <- lgb.train(params = params, data = tr,
-+                        num_boost_round = 4000,
-+                        eval_freq = 200, early_stopping_rounds = 600,
-+                        valids = list(valid = valid))
+$min_data_in_bin
+[1] 3
 
-[LightGBM] [Warning] Met categorical feature which contains sparse values. Consider renumbering to consecutive integers started from zero
-[LightGBM] [Info] Total Bins 11662
-[LightGBM] [Info] Number of data points in the train set: 35305139, number of used features: 99
-[LightGBM] [Info] Start training from score 0.495311
-[1]:	valid's rmse:3.51199 
-[201]:	valid's rmse:1.97455 
-[401]:	valid's rmse:1.95525 
-[601]:	valid's rmse:1.95015 
-[801]:	valid's rmse:1.94803 
-[1001]:	valid's rmse:1.94589 
-[1201]:	valid's rmse:1.94431 
-[1401]:	valid's rmse:1.94405 
-[1601]:	valid's rmse:1.94357 
-[1801]:	valid's rmse:1.94319 
-[2001]:	valid's rmse:1.94266 
-[2201]:	valid's rmse:1.94192 
-[2401]:	valid's rmse:1.94238 
-[2601]:	valid's rmse:1.94191 
-[2801]:	valid's rmse:1.94185 
-[3001]:	valid's rmse:1.94192 
-[3201]:	valid's rmse:1.9416 
-[3401]:	valid's rmse:1.94134 
-[3601]:	valid's rmse:1.94117 
-[3801]:	valid's rmse:1.9404 
-[4000]:	valid's rmse:1.94042 
+$bin_construct_sample_cnt
+[1] 5e+06
+
+$data_random_seed
+[1] 33
+
+$is_enable_sparse
+[1] TRUE
+
+$weight_column
+[1] ""
 
 
-Training time: 1.814984 hours
+-----------
+Data
+-----------
 
-Best score: 1.940335 at 3908 iteration
+HOBBIES_1
+
+> dim(tr)
+[1] 5491057     187
+
+ [1] "wday"                                        "month"                                      
+  [3] "year"                                        "event_name_1"                               
+  [5] "event_type_1"                                "snap_CA"                                    
+  [7] "snap_TX"                                     "snap_WI"                                    
+  [9] "day_month"                                   "day_quarter"                                
+ [11] "day_year"                                    "week_month"                                 
+ [13] "week_quarter"                                "week_year"                                  
+ [15] "weekend"                                     "month_quarter"                              
+ [17] "quart"                                       "semester"                                   
+ [19] "wday_s1"                                     "wday_c1"                                    
+ [21] "wday_s2"                                     "wday_c2"                                    
+ [23] "wday_s3"                                     "wday_c3"                                    
+ [25] "month_s1"                                    "month_c1"                                   
+ [27] "month_s2"                                    "month_c2"                                   
+ [29] "month_s3"                                    "month_c3"                                   
+ [31] "wday_rbf_1"                                  "wday_rbf_2"                                 
+ [33] "wday_rbf_3"                                  "wday_rbf_4"                                 
+ [35] "wday_rbf_5"                                  "wday_rbf_6"                                 
+ [37] "wday_rbf_7"                                  "month_rbf_1"                                
+ [39] "month_rbf_2"                                 "month_rbf_3"                                
+ [41] "month_rbf_4"                                 "month_rbf_5"                                
+ [43] "month_rbf_6"                                 "month_rbf_7"                                
+ [45] "month_rbf_8"                                 "month_rbf_9"                                
+ [47] "month_rbf_10"                                "month_rbf_11"                               
+ [49] "month_rbf_12"                                "sporting_event"                             
+ [51] "cultural_event"                              "national_event"                             
+ [53] "religious_event"                             "has_event"                                  
+ [55] "has_event_lead_t1"                           "has_event_lead_t2"                          
+ [57] "has_event_lead_t3"                           "week_events"                                
+ [59] "sporting_event_lead_1"                       "cultural_event_lead_1"                      
+ [61] "national_event_lead_1"                       "religious_event_lead_1"                     
+ [63] "sporting_event_lead_3"                       "cultural_event_lead_3"                      
+ [65] "national_event_lead_3"                       "religious_event_lead_3"                     
+ [67] "sell_price"                                  "sell_price_diff"                            
+ [69] "sell_price_rel_diff"                         "sell_price_cumrel"                          
+ [71] "sell_price_roll_sd7"                         "sell_price_to_mean"                         
+ [73] "sell_price_to_min"                           "sell_price_to_max"                          
+ [75] "sell_price_diff_to_max_diff"                 "diff_from_mean_price"                       
+ [77] "rel_diff_from_mean_price"                    "best_price"                                 
+ [79] "sell_price_to_min_lead_1"                    "sell_price_to_min_lead_2"                   
+ [81] "sell_price_to_max_lead_1"                    "sell_price_to_max_lead_2"                   
+ [83] "total_sales"                                 "total_state_sales"                          
+ [85] "total_store_sales"                           "total_cat_sales"                            
+ [87] "total_dept_sales"                            "total_state_cat_sales"                      
+ [89] "total_state_dept_sales"                      "total_store_cat_sales"                      
+ [91] "total_store_dept_sales"                      "total_item_sales"                           
+ [93] "total_item_state_sales"                      "snap"                                       
+ [95] "lngth"                                       "ADI"                                        
+ [97] "CV2"                                         "pz"                                         
+ [99] "Min"                                         "Low25"                                      
+[101] "Mean"                                        "Median"                                     
+[103] "Up25"                                        "Max"                                        
+[105] "dollar_sales"                                "type_1"                                     
+[107] "type_2"                                      "type_3"                                     
+[109] "type_4"                                      "lag_t1"                                     
+[111] "lag_t2"                                      "lag_t3"                                     
+[113] "lag_t4"                                      "lag_t5"                                     
+[115] "lag_t6"                                      "lag_t7"                                     
+[117] "lag_t8"                                      "lag_t14"                                    
+[119] "lag_t21"                                     "lag_t28"                                    
+[121] "lag_t35"                                     "lag_t42"                                    
+[123] "lag_t49"                                     "mean_last_month"                            
+[125] "mean_last_2_monts"                           "mean_previous_month"                        
+[127] "rolling_mean_lag1_t7"                        "rolling_mean_lag1_t120"                     
+[129] "rolling_mean_lag7_t7"                        "rolling_mean_lag7_t30"                      
+[131] "rolling_mean_lag7_t60"                       "rolling_mean_lag7_t90"                      
+[133] "rolling_mean_lag7_t120"                      "rolling_mean_lag7_t180"                     
+[135] "rolling_sd_lag7_t7"                          "rolling_sd_lag7_t30"                        
+[137] "rolling_sum_lag7_t7"                         "rolling_min_lag7_t7"                        
+[139] "rolling_min_lag7_t30"                        "rolling_max_lag7_t7"                        
+[141] "rolling_max_lag7_t30"                        "rolling_mean_lag28_t7"                      
+[143] "rolling_mean_lag28_t30"                      "rolling_mean_lag28_t60"                     
+[145] "rolling_mean_lag28_t90"                      "rolling_mean_lag28_t120"                    
+[147] "rolling_mean_lag28_t180"                     "rolling_sd_lag28_t7"                        
+[149] "rolling_sd_lag28_t30"                        "rolling_sum_lag28_t7"                       
+[151] "rolling_min_lag28_t7"                        "rolling_min_lag28_t30"                      
+[153] "rolling_max_lag28_t7"                        "rolling_max_lag28_t30"                      
+[155] "lag_t7_total_sales"                          "lag_t7_total_state_sales"                   
+[157] "lag_t7_total_store_sales"                    "lag_t7_total_cat_sales"                     
+[159] "lag_t7_total_dept_sales"                     "lag_t7_total_state_cat_sales"               
+[161] "lag_t7_total_state_dept_sales"               "lag_t7_total_store_cat_sales"               
+[163] "lag_t7_total_store_dept_sales"               "lag_t7_total_item_sales"                    
+[165] "lag_t7_total_item_state_sales"               "lag_t28_total_sales"                        
+[167] "lag_t28_total_state_sales"                   "lag_t28_total_store_sales"                  
+[169] "lag_t28_total_cat_sales"                     "lag_t28_total_dept_sales"                   
+[171] "lag_t28_total_state_cat_sales"               "lag_t28_total_state_dept_sales"             
+[173] "lag_t28_total_store_cat_sales"               "lag_t28_total_store_dept_sales"             
+[175] "lag_t28_total_item_sales"                    "lag_t28_total_item_state_sales"             
+[177] "meanl_last_total_sales"                      "mean_last_total_state_sales"                
+[179] "mean_last_total_store_sales"                 "mean_last_total_cat_sales"                  
+[181] "mean_last_total_dept_sales"                  "mean_last_total_state_cat_sales"            
+[183] "mean_last_total_state_dept_sales"            "mean_last_total_store_cat_sales"            
+[185] "mean_last_total_store_dept_sales"            "mean_last_total_item_sales"                 
+[187] "mean_last_total_item_state_sales"            "rolling_mean_lag_t28_total_sales"           
+[189] "rolling_mean_lag_t28_total_state_sales"      "rolling_mean_lag_t28_total_store_sales"     
+[191] "rolling_mean_lag_t28_total_cat_sales"        "rolling_mean_lag_t28_total_dept_sales"      
+[193] "rolling_mean_lag_t28_total_state_cat_sales"  "rolling_mean_lag_t28_total_state_dept_sales"
+[195] "rolling_mean_lag_t28_total_store_cat_sales"  "rolling_mean_lag_t28_total_store_dept_sales"
+[197] "rolling_mean_lag_t28_total_item_sales"       "rolling_mean_lag_t28_total_item_state_sales"
+
+-----------
+Parameters
+-----------
+
+$task
+[1] "train"
+
+$objective
+[1] "poisson"
+
+$boosting
+[1] "gbdt"
+
+$num_iterations
+[1] 3000
+
+$learning_rate
+[1] 0.03
+
+$num_leaves
+[1] 31
+
+$tree_learner
+[1] "serial"
+
+$seed
+[1] 33
+
+$nthread
+[1] 8
+
+$device_type
+[1] "cpu"
+
+$force_col_wise
+[1] TRUE
+
+$force_row_wise
+[1] FALSE
+
+$max_depth
+[1] -1
+
+$min_data_in_leaf
+[1] 20
+
+$bagging_fraction
+[1] 1
+
+$bagging_freq
+[1] 0
+
+$bagging_seed
+[1] 33
+
+$feature_fraction
+[1] 1
+
+$feature_fraction_bynode
+[1] 1
+
+$feature_fraction_seed
+[1] 33
+
+$extra_trees
+[1] FALSE
+
+$extra_seed
+[1] 33
+
+$metric
+[1] "rmse"
+
+$boost_from_average
+[1] FALSE
 
 
----------------------------------------------------------------------------------------------------
+>   lgb_model <- lgb.train(params = params, data = tr,
++                          valids = list(valid = valid), eval_freq = 20, early_stopping_rounds = 600,  # Validation parameters
++                          categorical_feature = categoricals,
++                          verbose = 1, record = TRUE, init_model = NULL, colnames = NULL,
++                          callbacks = list(), reset_data = FALSE)
+[LightGBM] [Info] Total Bins 27629
+[LightGBM] [Info] Number of data points in the train set: 5491057, number of used features: 192
 
+# poisson
+[801]:	valid's rmse:1.85619 
 
+# tweedie
+[461]:	valid's rmse:1.8552 
+[561]:	valid's rmse:1.8551 
+[381]:	valid's rmse:1.8506 
 

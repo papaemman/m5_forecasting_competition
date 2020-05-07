@@ -7,7 +7,8 @@
 
 ## Function create_dt(): Import and merge datasets
 
-create_dt <- function(is_train = TRUE, nrows = Inf, fh, max_lags, tr_last, fday) {
+
+create_dt <- function(is_train = TRUE, nrows = Inf, fh, max_lags, tr_last, fday, filter_params = NA) {
   
   ## Test
   
@@ -17,7 +18,7 @@ create_dt <- function(is_train = TRUE, nrows = Inf, fh, max_lags, tr_last, fday)
   # max_lags = 366                     # Max lags (features)
   # tr_last = 1913                     # Training last day
   # fday = as.IDate("2016-04-25")      # Forecasting day (first day)
- 
+  # filter_params = "dept_id == 'HOBBIES_1' "
   
   
   ## 1. Sales dataset
@@ -46,6 +47,11 @@ create_dt <- function(is_train = TRUE, nrows = Inf, fh, max_lags, tr_last, fday)
              value.name = "sales")
   
   dt[, d := as.integer(substring(d, 3))]
+  
+  # Filter sales
+  if(!is.na(filter_params)){
+    dt <- dt[eval(parse(text = filter_params)), ]
+  }
   
   
   ## 2. Calendar dataset
@@ -81,13 +87,13 @@ add_features <- function(dt) {
   ## Features from stat_total file
   print("Preprocessing steps...")
   
-  # Drop d, wm_yr_wk
+  # 1. Drop d, wm_yr_wk
   dt[, `:=`(wm_yr_wk = NULL)]
   
-  # Extra column snap
+  # 2. Extra column snap
   dt[, snap := ifelse(state_id == "CA", snap_CA, ifelse(state_id == "TX", snap_TX, snap_WI))]
   
-  # Turn non-numerics to integers
+  # 3. Turn non-numerics to integers
   cols <- c("item_id", "dept_id", "cat_id", "store_id", "state_id")
   dt[, (cols) := lapply(.SD, function(z) as.integer(as.factor(z))), .SDcols = cols]
   
@@ -98,19 +104,25 @@ add_features <- function(dt) {
   # levels(as.factor(dt$state_id))   # [1] "CA" "TX" "WI"
   
   
-  ## Features from stat_total file
+  # 4. Features from stat_total file
   print("Statistical Total features...")
   
   stat_total <- readRDS("data/processed/stat_total.rds")
   stat_total <- as.data.table(stat_total)
-  stat_total_short <- stat_total[,c("item_id", "store_id", "ADI", "CV2","pz", "Type", "Low25", "Mean", "Median", "Up25", "Max")]
+  stat_total_short <- stat_total[,c("item_id", "store_id", "lngth", "ADI", "CV2","pz", "Type", "Min", "Low25", "Mean", "Median", "Up25", "Max", "dollar_sales")]
   cols <- c("item_id", "store_id","Type")
   stat_total_short[, (cols) := lapply(.SD, function(z) as.integer(as.factor(z))), .SDcols = cols]
   
   dt <- dt[stat_total_short, on = c("item_id", "store_id"), nomatch = 0]
+  
+  dt[, `:=`(type_1 = as.numeric(Type == 1),
+            type_2 = as.numeric(Type == 2),
+            type_3 = as.numeric(Type == 3),
+            type_4 = as.numeric(Type == 4))][, Type := NULL]
+  
+  
   rm(stat_total)
   gc()
-  
   
   return(dt)
 }
