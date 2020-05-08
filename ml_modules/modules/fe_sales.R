@@ -13,61 +13,6 @@
 ## Import data (melted sales )
 # dt <- create_dt(is_train = T, nrows = 10000, fh = 28, max_lags = 366, tr_last = 1913, fday = as.IDate("2016-04-25"))
 
-
-# SOS: These features must be used with lags too!
-
-create_hierarhy_sales_features <- function(dt){
-  
-  
-  ## Hierarhy levels Features ----
-  print("create hierarhy sales features...")
-  
-  # Sum, mean, sd
-  
-  dt <- dt[ dt[, .(total_sales = sum(sales)), by = c("d")], on = "d", nomatch = 0]
-  gc()
-  
-  dt <- dt[ dt[, .(total_state_sales = sum(sales)), by = c("state_id", "d")], on = c("state_id", "d"), nomatch = 0]
-  gc()
-  
-  dt <- dt[ dt[, .(total_store_sales = sum(sales)), by = c("store_id", "d")], on = c("store_id", "d"), nomatch = 0]
-  gc()
-  
-  dt <- dt[ dt[, .(total_cat_sales = sum(sales)), by = c("cat_id", "d")], on = c("cat_id", "d"), nomatch = 0]
-  gc()
-  
-  dt <- dt[ dt[, .(total_dept_sales = sum(sales)), by = c("dept_id", "d")], on = c("dept_id", "d"), nomatch = 0]
-  gc()
-  
-  dt <- dt[ dt[, .(total_state_cat_sales = sum(sales)), by = c("state_id", "cat_id", "d")], on = c("state_id", "cat_id", "d"), nomatch = 0]
-  gc()
-  
-  dt <- dt[ dt[, .(total_state_dept_sales = sum(sales)), by = c("state_id","dept_id", "d")], on = c("state_id","dept_id", "d"), nomatch = 0]
-  gc()
-  
-  dt <- dt[ dt[, .(total_store_cat_sales = sum(sales)), by = c("store_id","cat_id", "d")], on = c("store_id","cat_id", "d"), nomatch = 0]
-  gc()
-  
-  dt <- dt[ dt[, .(total_store_dept_sales = sum(sales)), by = c("store_id","dept_id", "d")], on =  c("store_id","dept_id", "d"), nomatch = 0]
-  gc()
-  
-  dt <- dt[ dt[, .(total_item_sales = sum(sales)), by = c("item_id", "d")], on = c("item_id", "d"), nomatch = 0]
-  gc()
-  
-  dt <- dt[ dt[, .(total_item_state_sales = sum(sales)), by = c("state_id","item_id", "d")], on = c("state_id","item_id", "d"), nomatch = 0]
-  gc()
-  
-  # sales
-  # dt <- dt[ dt[, .(total_item_store_sales = sum(sales)), by = c("store_id","item_id", "d")], on = c("store_id","item_id", "d"), nomatch = 0]
-  
-  return(dt)
-}                                
-
-# Test
-# dt <- create_hierarhy_sales_features(dt = dt)                       
-# View(head(dt, 300))
-
-
 create_sales_features <- function(dt){
   
   # dt
