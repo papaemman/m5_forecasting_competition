@@ -12,6 +12,7 @@ library(RcppRoll)
 library(lightgbm)
 library(tictoc)
 
+fh = 28
 
 
 ## 01. Load the dataset ----
@@ -20,8 +21,7 @@ library(tictoc)
 # rm(dt)
 
 # tr <- readRDS("../kitematic/temp/dt_full_train.rds")
-tr <- readRDS("../kitematic/temp/dt_full_train_without_NAs.rds")
-
+tr <- readRDS("../kitematic/temp/dt_full_train_without_NAs.rds")   # [1] 39720284      211
 
 
 tables()
@@ -50,13 +50,18 @@ source("ml_modules/features.R")
 setdiff(features, colnames(tr))  # Errors
 setdiff(colnames(tr), features)  # Features to not include in model
 
+
 # Which of these features should be treaten as categorical
 categoricals
-
 setdiff(categoricals, colnames(tr))  # Errors
 
 # setdiff(categoricals, which(sapply(tr, function(x){class(x)=="integer"})) %>% names())
 
+
+## Feature Selection (From importnaces) ----
+
+# features <- imp_1$Feature[1:80]
+# categoricals <- categoricals[categoricals %in% features]
 
 
 ## 04. Build multiple different models ----
@@ -64,60 +69,73 @@ setdiff(categoricals, colnames(tr))  # Errors
 stat_total <- read.csv("data/processed/stat_total.csv", stringsAsFactors = F)
 stores <- unique(stat_total$store_id)
 departments <- unique(stat_total$dept_id)
+
+
+# - A. One model per STORE (10 models) -
+df <- expand.grid(stores, stringsAsFactors = F)
+colnames(df) <- c("store_id")
+df
+
+# - B. One model per DEPARTMENT (7 models) -
+df <- expand.grid(departments, stringsAsFactors = F)
+colnames(df) <- c("dept_id")
+df
+
+# - C. One model per STORE - DEPARTMENT (70 models) -
 df <- expand.grid(stores,departments, stringsAsFactors = F)
 colnames(df) <- c("store_id", "dept_id")
+dim(df)
 head(df)
 
-# Define the order in tr dataset (alphabetical order)
+
+# Define the rights order in tr dataset (alphabetical order)
 stores <- c("CA_1", "CA_2", "CA_3", "CA_4", "TX_1", "TX_2", "TX_3", "WI_1", "WI_2", "WI_3")
 departments <- c("FOODS_1", "FOODS_2", "FOODS_3", "HOBBIES_1", "HOBBIES_2", "HOUSEHOLD_1", "HOUSEHOLD_2")
 
 
-# Save training data
+# Save full training data
 tr_full = tr
 
 
 for (i in 1:nrow(df)){
   
   # Test
-  # i=43
+  # i=1
   
+  # Print data subsets
   store <- df[i,"store_id"]
   dept <- df[i,"dept_id"]
   print(paste("Store:", store, "| Dept:", dept))
   
   
-  ## 1. Subset training data
-  tr <- tr_full
-  dim(tr)   
-  anyNA(tr)
+  ## - 1. One model for all data -
+  # tr <- tr_full
   
+  ## - 1A. One model per STORE (10 models) -
+  # tr <- tr_full[store_id == which(store == stores),]
   
-  ## 1A. Subset training data (STORE and DEPT)
-  tr <- tr_full[store_id == which(store == stores) & dept_id == which(dept == departments),]
-  
-  ## NAs
-  dim(tr)   
-  anyNA(tr)
-  sapply(tr, function(x){sum(is.na(x))})             # Check NAs in every column
-  nrow(unique(tr[,j = c("item_id", "store_id")]))    # Total items (416)
-  
-  # tr <- tr[!is.na(rolling_mean_lag28_t180),]
-  # dim(tr)     # 565671    163
-  # nrow(unique(tr[,j = c("item_id")]))    # Total items (416)
-  # gc()
-  
-  
-  ## 1B. Subset training data (only DEPT)
+  ## - 1B. One model per DEPARTMENT (7 models) -
   tr <- tr_full[dept_id == which(dept == departments),]
   
-  ## NAs
-  dim(tr) 
-  anyNA(tr)
+  ## - 1C. One model per STORE - DEPARTMENT (70 models) -
+  # tr <- tr_full[store_id == which(store == stores) & dept_id == which(dept == departments),]
+  
+  
+  ## Deal with NAs
+  
+  # dim(tr)   
+  # anyNA(tr)
+  # sapply(tr, function(x){sum(is.na(x))})             # Check NAs in every column
+  # nrow(unique(tr[,j = c("item_id", "store_id")]))    # Total items (416)
+  # tr <- tr[!is.na(rolling_mean_lag28_t180),]
+  # dim(tr)                                            # 565671    163
+  # nrow(unique(tr[,j = c("item_id")]))                # Total items (416)
+  # gc()
   
   
   
   ## 2. Data construction parameters (binning)
+  
   data_params <- list(
     max_bin = 255,                          # max number of bins that feature values will be bucketed in
     min_data_in_bin = 3,                    # minimal number of data inside one bin 
@@ -136,34 +154,25 @@ for (i in 1:nrow(df)){
   # tr <- lgb.Dataset(tr, categorical_feature = categoricals, label = y,  params = data_params)
   # gc()
   
-  # tic()
-  # lgb_model <- lgb.train(params = params, data = tr)
-  # toc()
-  
-  ## Feature Selection
-  # features <- imp_1$Feature[1:80]
-  # categoricals <- categoricals[categoricals %in% features]
-  
-  
   ## // Keep 1 month (last month) of validation data //
   
   # Validation data
   flag <- tr$d >= 1914 - 28
   valid_data <- data.matrix(tr[flag, ..features])
-  valid_data <- lgb.Dataset(data = valid_data, categorical_feature = categoricals, label = tr[["sales"]][flag], params = data_params)
+  valid_data <- lgb.Dataset(data = valid_data, categorical_feature = categoricals, label = tr[["sales"]][flag], params = data_params, free_raw_data = F)
   
   # Training data
   flag <- tr$d < 1914 - 28
   y <- tr[["sales"]][flag]
   train_data <- data.matrix(tr[flag,..features,])
-  train_data <- lgb.Dataset(data = train_data, categorical_feature = categoricals, label = y, params = data_params)
+  train_data <- lgb.Dataset(data = train_data, categorical_feature = categoricals, label = y, params = data_params, free_raw_data = F)
 
   
+  
   ## Define parameters for training
+  
   # DOCUMENTATION: https://lightgbm.readthedocs.io/en/latest/Parameters.html
   # R API Documentation: https://lightgbm.readthedocs.io/en/latest/R/index.html
-  # https://github.com/Microsoft/LightGBM/issues/127
-
   
   params <- list(
 
@@ -222,7 +231,7 @@ for (i in 1:nrow(df)){
   )
   
   
-  ## Train
+  ## // Train model //
   tic()
   lgb_model <- lgb.train(params = params, data = train_data,
                          valids = list(valid = valid_data), eval_freq = 50, early_stopping_rounds = 400, metric = "rmse", # Validation parameters
@@ -236,7 +245,7 @@ for (i in 1:nrow(df)){
   cat("Best score:", lgb_model$best_score, "at", lgb_model$best_iter, "iteration") 
   
   
-  ## Train with Custom evaluation function
+  ## // Train with Custom evaluation function //
   lgb_model <- lgb.train(params = params, data = train_data,
                          valids = list(valid = valid_data), eval_freq = 50, early_stopping_rounds = 400, eval = custom_rmse_metric, metric = "rmse", # Validation parameters
                          nrounds = 1000,  
@@ -245,14 +254,13 @@ for (i in 1:nrow(df)){
                          callbacks = list(), reset_data = FALSE)
   
   
+  ## // Train with Custom evaluation function - WRMSSE //
   
-  ## Train with Custom evaluation function
+  # Load denominator for wrmsSe
+  wrmsse_den <- read.csv("data/wrmsse_den_without_last_28.csv")
   
   # Load weights for Wrmsse
   weights <- read.csv("data/bts_weights.csv")
-  
-  # Load denominator for rmsSe
-  wrmsse_den <- read.csv("data/wrmsse_den_without_last_28.csv")
   
   # The validation data are:
   flag <- tr$d >= 1914 - 28
@@ -261,11 +269,11 @@ for (i in 1:nrow(df)){
   item_group_frc %>% unique() %>% nrow()
   
   # Select the approprate store_ids - item_ids
-  wrmsse_den <- merge(item_group_frc, wrmsse_den , by = c("store_id", "item_id"), all.x = T)
+  wrmsse_den <- merge(item_group_frc, wrmsse_den , by = c("store_id", "item_id"), all.x = T, sort = F)
   wrmsse_den[,c("store_id", "item_id")] %>% unique() %>% nrow()
-  weights <- merge(item_group_frc, weights , by = c("store_id", "item_id"), all.x = T)
-  weights[,c("store_id", "item_id")] %>% unique() %>% nrow()
-
+  weights <- merge(item_group_frc, weights , by = c("store_id", "item_id"), all.x = T, sort = F)
+  weights[, c("store_id", "item_id")] %>% unique() %>% nrow()
+  
   
   ## Custom evaluation function
   lgb_model <- lgb.train(params = params, data = train_data,
@@ -277,17 +285,23 @@ for (i in 1:nrow(df)){
                          verbose = 1, record = TRUE, init_model = NULL, colnames = NULL,
                          callbacks = list(), reset_data = FALSE)
   
+  
+  # tic()
+  # lgb_model <- lgb.train(params = params, data = tr)
+  # toc()
+  
+  
   ## Check importances (Why so slow?)
-  # imp_1 <- lgb.importance(lgb_model)
-  # View(imp_1)
+  # imp <- lgb.importance(lgb_model)
+  # View(imp)
   # lgb.plot.importance(imp, 20, cex = 0.9) 
-  # write.csv(imp_1, file = "ml_modules/imp/importnaces_FOODS_1_more_cats.csv", row.names = F)
+  # write.csv(imp, file = "ml_modules/imp/importnaces_CA.csv", row.names = F)
   
 }
 
 
-## Define custom evaluation metric - function (WRMSSE)
 
+## Define custom evaluation metric - function
 
 # I need first to re-write the rmse evaluation function as sanity check
 custom_rmse_metric <- function(preds, dtrain) {
@@ -316,25 +330,7 @@ custom_rmse_metric_v2 <- function(preds, dtrain) {
 }
 
 
-
-# Load weights for Wrmsse
-weights <- read.csv("data/bts_weights.csv")
-
-# Load denominator for rmsSe
-wrmsse_den <- read.csv("data/wrmsse_den_without_last_28.csv")
-
-# The validation data are:
-flag <- tr$d >= 1914 - 28
-item_group_frc <- tr[flag, c("store_id", "item_id")]
-
-dim(item_group_frc) 
-head(item_group_frc)
-
-
-# Select the approprate store_ids - item_ids
-wrmsse_den <- merge(item_group_frc, wrmsse_den , by = c("store_id", "item_id"), all.x = T)
-weights <- merge(item_group_frc, weights , by = c("store_id", "item_id"), all.x = T)
-  
+# WRMSSE
 
 custom_wrmsse_metric <- function(preds, dtrain) { #  wrmsse_den, weights, fh
   
@@ -380,192 +376,6 @@ custom_wrmsse_metric <- function(preds, dtrain) { #  wrmsse_den, weights, fh
   
   return(ls)
 }
-
-
-
-
-## Bayesian optimization ----
-
-
-# Test
-# i=1
-
-store <- df[i,"store_id"]
-dept <- df[i,"dept_id"]
-print(paste("Store:", store, "| Dept:", dept))
-
-
-## Subset training data (STORE and DEPT)
-tr <- tr_full[store_id == which(store == stores) & dept_id == which(dept == departments),]
-
-
-## Data construction parameters (binning)
-data_params <- list(
-  max_bin = 255,                         # max number of bins that feature values will be bucketed in
-  min_data_in_bin = 3,                   # minimal number of data inside one bin 
-  bin_construct_sample_cnt = nrow(tr),    # number of data that sampled to construct histogram bins | aliases: subsample_for_bin
-  data_random_seed = 33, 
-  is_enable_sparse = TRUE,               # used to enable/disable sparse optimization | aliases: is_sparse, enable_sparse, sparse
-  feature_pre_filter = F,
-  weight_column = ""
-)
-
-
-
-## // Keep 1 month (last month) of validation data //
-
-# Validation data
-flag <- tr$d >= 1914 - 28
-valid_data <- data.matrix(tr[flag, ..features])
-valid <- lgb.Dataset(data = valid_data, categorical_feature = categoricals, label = tr[["sales"]][flag], params = data_params)
-
-# Training data
-flag <- tr$d < 1914 - 28
-y <- tr[["sales"]][flag]
-tr <- data.matrix(tr[flag,..features,])
-tr <- lgb.Dataset(data = tr, categorical_feature = categoricals, label = y, params = data_params)
-
-
-params <- list(
-  
-  # 1. Core parameters ----
-  task = "train",
-  
-  objective = "tweedie",           # "regression", "regression_l1", "poisson", "huber", "tweedie"
-  
-  boosting = "gbdt",               # Boosting type: "gbdt", "rf", "dart", "goss"
-  
-  # num_iterations = 3000,         # number of training rounds            | aliases: num_iteration, n_iter, num_tree, num_trees, num_round, num_rounds, num_boost_round, n_estimators
-  learning_rate = 0.03,            # shrinkage rate                       | aliases: shrinkage_rate, eta
-  num_leaves = 2**11 - 1,          # max number of leaves in one tree     | aliases: num_leaf, max_leaves, max_leaf
-  tree_learner = "serial",         # "serial", "feature", "data", "voting"
-  
-  seed = 33,
-  nthread = 8,
-  device_type = "cpu",
-  
-  # 2. Learning Control Parameters  ----
-  
-  force_col_wise = TRUE,
-  force_row_wise = FALSE,
-  
-  max_depth = 50,
-  min_data_in_leaf = 20,              # minimal number of data in one leaf   | aliases: min_data_per_leaf, min_data, min_child_samples
-  
-  bagging_fraction = 0.6,             # randomly select part of data without resampling  | aliases: sub_row, subsample, bagging
-  bagging_freq = 1,                   # frequency for bagging                            | subsample_freq 
-  bagging_seed = 33,
-  
-  feature_fraction = 0.6,             # for boosting "rf" |  aliases: sub_feature, colsample_bytree
-  feature_fraction_bynode = 0.5,      # 
-  feature_fraction_seed = 33,
-  
-  lambda_l1 = 0.1,                  #  | aliases: reg_alpha
-  lambda_l2 = 0.1,                  #  | aliases: reg_lambda, lambda
-  
-  # min_gain_to_split = 0.01,
-  
-  extra_trees = FALSE,
-  extra_seed = 33, 
-  
-  
-  # 3. I/O parameters ----
-  
-  # Dataset parameters
-  tweedie_variance_power= 1.1,
-  metric = "rmse",
-  
-  # 4. Objective parameters ----
-  boost_from_average = F
-  
-  # 5. Metric Parameters ----
-  
-)
-
-## Train
-tic()
-lgb_model <- lgb.train(params = params, data = tr,
-                       valids = list(valid = valid), eval_freq = 50, early_stopping_rounds = 400, # Validation parameters
-                       nrounds = 1000,  
-                       categorical_feature = categoricals,
-                       verbose = 1, record = TRUE, init_model = NULL, colnames = NULL,
-                       callbacks = list(), reset_data = FALSE)
-
-toc()
-
-cat("Best score:", lgb_model$best_score, "at", lgb_model$best_iter, "iteration") 
-
-
-
-
-scoringFunction <- function(max_depth, num_leaves, learning_rate, min_child_weight, subsample) {
-  
-  ## Test
-  # max_depth = 5
-  # min_child_weight = 5
-  # subsample = 0.5
-  
-  # Prepare dataset
-  dtrain <- xgb.DMatrix(agaricus.train$data, label = agaricus.train$label)
-  
-  # Define training parameters
-  Pars <- list( 
-    booster = "gbtree",
-    eta = 0.001,
-    max_depth = max_depth,
-    min_child_weight = min_child_weight,
-    subsample = subsample,
-    objective = "binary:logistic",
-    eval_metric = "auc"
-  )
-  
-  # xgboost cross validation
-  xgbcv <- xgb.cv(
-    params = Pars,
-    data = dtrain,
-    nround = 100,
-    folds = Folds,
-    early_stopping_rounds = 5,
-    maximize = TRUE,
-    verbose = 0
-  )
-  
-  # xgbcv
-  # xgbcv$folds
-  # xgbcv$evaluation_log
-  
-  # Get results (Score and )
-  ls <- list(Score = max(xgbcv$evaluation_log$test_auc_mean),
-             nrounds = xgbcv$best_iteration)
-  
-  return(ls)
-}
-
-
-# Define Bounds
-bounds <- list( 
-  max_depth = c(1L, 5L),
-  min_child_weight = c(0, 25),
-  subsample = c(0.25, 1)
-)
-
-# We are now ready to put this all into the bayesOpt function.
-set.seed(0)
-
-tNoPar <- system.time(
-  
-  optObj <- bayesOpt(
-    FUN = scoringFunction,
-    bounds = bounds,
-    initPoints = 4,
-    iters.n = 4,
-    iters.k = 1
-  )
-)
-
-
-
-
 
 
 

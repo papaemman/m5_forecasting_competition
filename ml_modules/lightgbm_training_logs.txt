@@ -234,3 +234,31 @@ Best score: 1.844484 at 134 iteration
 The results was better if I train per dept, that the store-dept case
 No just some stores have fewer sales than others.
 
+
+
+>   lgb_model <- lgb.train(params = params, data = train_data,
++                          valids = list(valid = valid_data), eval_freq = 50, early_stopping_rounds = 400, # Validation parameters
++                          eval = custom_wrmsse_metric, # SOS:  wrmsse_den, weights, fh
++                          metric = "rmse", 
++                          nrounds = 1000,  
++                          categorical_feature = categoricals,
++                          verbose = 1, record = TRUE, init_model = NULL, colnames = NULL,
++                          callbacks = list(), reset_data = FALSE)
+[LightGBM] [Warning] Met categorical feature which contains sparse values. Consider renumbering to consecutive integers started from zero
+[LightGBM] [Info] Total Bins 24934
+[LightGBM] [Info] Number of data points in the train set: 3023138, number of used features: 184
+[1]:	valid's rmse:2.96553	valid's wrmsse:0.0594986 
+[51]:	valid's rmse:1.94318	valid's wrmsse:0.0470158 
+[101]:	valid's rmse:1.84555	valid's wrmsse:0.0457512 
+[151]:	valid's rmse:1.84183	valid's wrmsse:0.0455865 
+[201]:	valid's rmse:1.84274	valid's wrmsse:0.0455207 
+[251]:	valid's rmse:1.84415	valid's wrmsse:0.0455333 
+[301]:	valid's rmse:1.84441	valid's wrmsse:0.0455078 
+[351]:	valid's rmse:1.84582	valid's wrmsse:0.0455123 
+[401]:	valid's rmse:1.84738	valid's wrmsse:0.0455234 
+[451]:	valid's rmse:1.84869	valid's wrmsse:0.0455221 
+[501]:	valid's rmse:1.84921	valid's wrmsse:0.0455359 
+
+
+
+
