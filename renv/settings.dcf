@@ -1,5 +1,5 @@
-external.libraries:
-ignored.packages: lightgbm
+external.libraries: lightgbm
+ignored.packages:
 package.dependency.fields: Imports, Depends, LinkingTo
 snapshot.type: implicit
 use.cache: TRUE
