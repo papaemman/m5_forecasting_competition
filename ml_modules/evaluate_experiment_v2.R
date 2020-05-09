@@ -60,6 +60,7 @@ for (day in as.list(seq(fday, length.out = 2*fh, by = "day"))){
   
   # Get a subset from te (test) dataset, with the last max_lags days
   # because these are the days required to create the prediction features (lag, roll_means etc)
+
   tst <- te[date >= day - max_lags & date <= day]
   
   # Create features for this dataset
