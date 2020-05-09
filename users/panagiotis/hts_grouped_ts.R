@@ -291,22 +291,27 @@ allf <- readRDS("data/allf_01.05.2020_05_55_02.rds")
 dim(allf)
 allf[1:28, 1:10]
 
+
 i <- 1
 while (!is.na(allf[1,i])) {
   i <- i+1
 }
 
+i
 allf[1:28,(i-3):(i+3)]
 
-# Number of groups at each level: 1 3 10 3 7 9 21 30 70 3049 9147 30490
+# Number of time series at each group level: 1 3 10 3 7 9 21 30 70 3049 9147 30490
 1+3+10+3+7+9+21+30+70+3049+9147 # 12350
+12350 + 30490
 
 allf[1:28, 12351:12355]
-colnames(bts)
+head(colnames(bts))
+
 
 # Bottom submissions
 ensemble_sub <- read.csv("data/pnt_submissions/submission_ensembled24.csv", stringsAsFactors = F)
 head(ensemble_sub)
+
 ensemble_sub <- ensemble_sub %>% filter(grepl(pattern = "validation", x = ensemble_sub$id))
 ensemble_sub <- merge(data.frame(id = colnames(bts)), ensemble_sub, by = "id", sort = F)
 id_ensemble_sub <- ensemble_sub$id
@@ -315,13 +320,10 @@ ensemble_sub <- t(ensemble_sub)
 dim(ensemble_sub)
 
 
-
 allf[1:28, 12351:ncol(allf)] <- ensemble_sub
 dim(allf)
 class(allf)
 allf <- ts(allf, start =  c(2016, 116), frequency = 365)
-
-Sys.time()
 
 
 ## Optimal Combination for base forecastings (create reconciled forecastings)
@@ -333,7 +335,7 @@ y.f <- combinef(allf,
                 groups = get_groups(y),
                 weights = NULL ,             #  NULL or weights_vec
                 keep ="bottom",              # c("gts", "all", "bottom")
-                algorithms = "lu"          # c("lu", "cg", "chol", "recursive", "slm")
+                algorithms = "cg"            # c("lu", "cg", "chol", "recursive", "slm")
                 )
 
 saveRDS(y.f, file = "y.f.rds")
@@ -343,36 +345,39 @@ toc()
 tic()  
 y.f.2 <- combinef(allf,
                 groups = get_groups(y),
-                weights = weights_vec ,             #  NULL or weights_vec
+                weights = weights_vec+0.000001,             #  NULL or weights_vec
                 keep ="bottom",              # c("gts", "all", "bottom")
                 algorithms = "lu"          # c("lu", "cg", "chol", "recursive", "slm")
 )
+
+y.f.2[1:5, 1:5]
 
 saveRDS(y.f, file = "y.f.2.rds")
 toc()
 
 
-str(y.f.2)
-
-
-dim(y.f)
-dim(ensemble_sub)
-
-ensemble_sub[1:3, 1:10]
-y.f[1:3, 1:10]
-
-############33
+## Create submission files
+y.f <- y.f.2
 
 dim(y.f)
 
-ensemble_sub[1:5, 1:5]
-y.f[1:5,1:5]
-y.f <- as.data.frame(y.f)
 y.f <- t(y.f)
+y.f <- as.data.frame(y.f)
+y.f$id <- colnames(bts)
+colnames(y.f) <- c(paste0("F", 1:28),"id")
+
+y.f_eval <- y.f
+y.f_eval$id <- gsub(pattern = "validation",replacement = "evaluation", x = y.f_eval$id)
+y.f <- rbind(y.f, y.f_eval)
+
+sample_submission <- read.csv("data/pnt_submissions/sample_submission.csv", stringsAsFactors = F)
+head(sample_submission)
+dim(sample_submission)
+dim(y.f)
+
+y.f <- merge(data.frame(id = sample_submission[,c("id")]), y.f, by = "id", sort = F)
 View(y.f)
 
-y.f$id <- as.character(id_ensemble_sub
-
-
+write.csv(y.f, file = "ensemble_24_opt_combination_weights_lu.csv", row.names = F)
 
 
