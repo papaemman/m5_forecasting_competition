@@ -862,12 +862,6 @@
       "Repository": "CRAN",
       "Hash": "361811f31f71f8a617a9a68bf63f1f42"
     },
-    "lightgbm": {
-      "Package": "lightgbm",
-      "Version": "2.3.2",
-      "Source": "unknown",
-      "Hash": "94da061d3adec2503eacf7b333598a60"
-    },
     "lime": {
       "Package": "lime",
       "Version": "0.5.1",
