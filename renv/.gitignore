@@ -1,3 +1,6 @@
 library/
 python/
 staging/
+LightGBM
+lightgbm_2.3.2.tar.gz
+lightgbm_r
