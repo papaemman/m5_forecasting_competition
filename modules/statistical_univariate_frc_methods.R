@@ -20,6 +20,10 @@ Naive <- function(x, h, type){
     frcst <- head(rep(as.numeric(tail(x,7)), h), h)  # Seasonal (weekly seasonality) Naive forecasting: Repeat h/7 times the last 7 values of the time series
   }
   
+  if (type=="seasonal_month"){
+    frcst <- head(rep(as.numeric(tail(x,28)), h), h)  # Seasonal (weekly seasonality) Naive forecasting: Repeat h/7 times the last 7 values of the time series
+  }
+  
   return(frcst)
 }
 
@@ -240,6 +244,14 @@ smooth_es <- function(x, h){
 }
 
 # smooth_es(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7), h = 5)
+
+smooth_es_v2 <- function(x, h, xreg){
+  as.numeric(smooth::es(y = ts(data = x, frequency = 7),
+                        model = "AAdA", # "CCC"
+                        initial = "backtesting",
+                        loss="MSE",
+                        h=h)$forecast)
+}
 
 
 ## 10. ARIMA ----

@@ -50,7 +50,7 @@ gc()
 source("ml_modules/features.R")
 
 setdiff(features, colnames(tr))  # Errors
-setdiff(colnames(tr), features)  # Features to not include in model
+setdiff(colnames(tr), features)  # Features to not include in model (ids, d, sales, total_sales)
 
 # Which of these features should be treaten as categorical
 categoricals
@@ -59,10 +59,127 @@ setdiff(categoricals, colnames(tr))  # Errors
 # setdiff(categoricals, which(sapply(tr, function(x){class(x)=="integer"})) %>% names())
 
 
-# Let's asuume that there is an available dataset
+## 04. Build multiple different models ----
 
-## 04. Define the scoring function for the Bayesian optimization  -----
+stat_total <- read.csv("data/processed/stat_total.csv", stringsAsFactors = F)
+stores <- unique(stat_total$store_id)
+departments <- unique(stat_total$dept_id)
+
+# Define the rights order in tr dataset (alphabetical order)
+stores <- c("CA_1", "CA_2", "CA_3", "CA_4", "TX_1", "TX_2", "TX_3", "WI_1", "WI_2", "WI_3")
+departments <- c("FOODS_1", "FOODS_2", "FOODS_3", "HOBBIES_1", "HOBBIES_2", "HOUSEHOLD_1", "HOUSEHOLD_2")
+
+
+# - A. One model per STORE (10 models) -
+# df <- expand.grid(stores, stringsAsFactors = F)
+# colnames(df) <- c("store_id")
+# df
+
+# - B. One model per DEPARTMENT (7 models) -
+df <- expand.grid(departments, stringsAsFactors = F)
+colnames(df) <- c("dept_id")
+df
+
+# - C. One model per STORE - DEPARTMENT (70 models) -
+# df <- expand.grid(stores,departments, stringsAsFactors = F)
+# colnames(df) <- c("store_id", "dept_id")
+# dim(df)
+# head(df)
+
+
+# Save full training data
+tr_full = tr
+
+
+## 05. Select one dataset and create lightgbm dataset ----
+
+i=1
+
+# Print data subsets
+store <- df[i,"store_id"]
+dept <- df[i,"dept_id"]
+print(paste("Store:", store, "| Dept:", dept))
+
+
+## - 1. One model for all data -
+# tr <- tr_full
+
+## - 1A. One model per STORE (10 models) -
+# tr <- tr_full[store_id == which(store == stores),]
+
+## - 1B. One model per DEPARTMENT (7 models) -
+# tr <- tr_full[dept_id == which(dept == departments),]
+tr <- tr[dept_id == which(dept == departments),]
+
+## - 1C. One model per STORE - DEPARTMENT (70 models) -
+# tr <- tr_full[store_id == which(store == stores) & dept_id == which(dept == departments),]
+
+
+## Deal with NAs
+tr
+dim(tr)
+anyNA(tr)
+# sapply(tr, function(x){sum(is.na(x))})           # Check NAs in every column
+nrow(unique(tr[,j = c("item_id", "store_id")]))    # Total items (416)
+# tr <- tr[!is.na(rolling_mean_lag28_t180),]
+
+
+
+## Data construction parameters (binning)
+
+data_params <- list(
+  max_bin = 255,                          # max number of bins that feature values will be bucketed in
+  min_data_in_bin = 3,                    # minimal number of data inside one bin 
+  bin_construct_sample_cnt = nrow(tr),    # number of data that sampled to construct histogram bins | aliases: subsample_for_bin
+  data_random_seed = 33, 
+  is_enable_sparse = TRUE,                # used to enable/disable sparse optimization | aliases: is_sparse, enable_sparse, sparse
+  feature_pre_filter = F,
+  weight_column = ""
+)
+
+
+## // Keep 1 month (last month) of validation data //
+
+# Validation data
+flag <- tr$d >= 1914 - 28
+valid_data <- data.matrix(tr[flag, ..features])
+valid_data <- lgb.Dataset(data = valid_data, categorical_feature = categoricals, label = tr[["sales"]][flag], params = data_params, free_raw_data = F)
+
+# Training data
+flag <- tr$d < 1914 - 28
+y <- tr[["sales"]][flag]
+train_data <- data.matrix(tr[flag,..features,])
+train_data <- lgb.Dataset(data = train_data, categorical_feature = categoricals, label = y, params = data_params, free_raw_data = F)
+
+
+## Load datasets for WRMSSE caluclations
+
+# Load denominator for wrmsSe
+wrmsse_den <- read.csv("data/wrmsse_den_without_last_28.csv")
+
+# Load weights for Wrmsse
+weights <- read.csv("data/bts_weights.csv")
+
+# The validation data are:
+flag <- tr$d >= 1914 - 28
+item_group_frc <- tr[flag, c("store_id", "item_id")]
+item_group_frc
+item_group_frc %>% unique() %>% nrow()
+dim(item_group_frc)
+
+# Select the approprate store_ids - item_ids
+wrmsse_den <- merge(item_group_frc, wrmsse_den , by = c("store_id", "item_id"), all.x = T, sort = F)
+wrmsse_den[,c("store_id", "item_id")] %>% unique() %>% nrow()
+dim(wrmsse_den)
+weights <- merge(item_group_frc, weights , by = c("store_id", "item_id"), all.x = T, sort = F)
+weights[, c("store_id", "item_id")] %>% unique() %>% nrow()
+dim(weights)
+
+
+## 06. Define the scoring function for the Bayesian optimization  -----
  
+# Don't forget to define custom_wrmsse_metric() function
+
 scoringFunction <- function(learning_rate, num_leaves,                                                   # Core parameters
                             max_depth, min_data_in_leaf,                                                 # Learning Control Parameters
                             bagging_fraction, bagging_freq, feature_fraction, feature_fraction_bynode,
@@ -129,12 +246,12 @@ scoringFunction <- function(learning_rate, num_leaves,                          
   ## Lightgbm Trainining
 
   lgb_model <- lgb.train(params = params, data = train_data,
-                         valids = list(valid = valid_data), eval_freq = 50, early_stopping_rounds = 50, # Validation parameters
-                         eval = custom_wrmsse_metric, # SOS:  wrmsse_den, weights, fh
+                         valids = list(valid = valid_data), eval_freq = 30, early_stopping_rounds = 300, # Validation parameters
+                         eval = custom_wrmsse_metric,                           # SOS:  wrmsse_den, weights, fh datafiles needed for wrmsse calculations
                          metric = "rmse", 
-                         nrounds = 100,  
+                         nrounds = 1000,  
                          categorical_feature = categoricals,
-                         verbose = 1, record = TRUE, init_model = NULL, colnames = NULL,
+                         verbose = -1, record = TRUE, init_model = NULL, colnames = NULL,
                          callbacks = list(), reset_data = FALSE)
   
   
@@ -149,6 +266,8 @@ scoringFunction <- function(learning_rate, num_leaves,                          
   # NOTE:
   # ParBayesianOptimization will maximize the function you provide it, to change your problem to a maximization one, just multiply the RMSE (Score) being output by -1.
   
+  gc()
+  
   # Get results (Score = wrmse and rmse)
   ls <- list(Score = - min(unlist(lgb_model$record_evals$valid$wrmsse$eval)),
              nrounds_wrmsse = which.min(unlist(lgb_model$record_evals$valid$wrmsse$eval)),
@@ -160,14 +279,14 @@ scoringFunction <- function(learning_rate, num_leaves,                          
 
 
 
-##  05. Define Bounds for parameters ----
+##  07. Define Bounds for parameters ----
 
 # DOCUMENTATION: https://lightgbm.readthedocs.io/en/latest/Parameters.html
 
 bounds <- list(
   # Core parameters
   learning_rate = c(0.01, 0.6),
-  num_leaves = c(1L, 100000L),  
+  num_leaves = c(2L, 100000L),  
   # Learning Control Parameters
   max_depth = c(1L, 10000L),
   min_data_in_leaf = c(5L, 100L),                                                 
@@ -182,32 +301,43 @@ bounds <- list(
 )
 
 
-## 07. Run Bayesian optimization process
+## 08. Run Bayesian optimization process ----
+
+# To save memory
+rm(tr_full)
 
 # We are now ready to put this all into the bayesOpt function.
 set.seed(0)
 
-optObj <- ParBayesianOptimization::BayesianOptimization(
+optObj <- bayesOpt(
   FUN = scoringFunction,
   bounds = bounds,
-  initialize = TRUE,
-  initPoints = 6,
-  nIters = 24,
-  kern = "Matern52",                # "Gaussian", "Exponential","Matern52", "Matern32"
-  beta = 0,
-  acq = "ucb",
-  stopImpatient = list(newAcq = "ucb", rounds = Inf),
+  saveFile = NULL,
+  # initGrid,
+  initPoints = 12,
+  iters.n = 8,
+  iters.k = 1,
+  otherHalting = list(timeLimit = Inf, minUtility = 0),
+  acq = "ei",  # "ucb", "ei", "eips", "poi"
   kappa = 2.576,
   eps = 0,
-  gsPoints = 100,
-  convThresh = 1e+07,
-  minClusterUtility = NULL,
-  noiseAdd = 0.25,
   parallel = FALSE,
-  verbose = 1
+  gsPoints = pmax(100, length(bounds)^3),
+  convThresh = 1e+08,
+  acqThresh = 1,
+  errorHandling = "stop",
+  plotProgress = T,
+  verbose = 2
 )
 
-saveRDS(optObj, "optObj.rds")
+saveRDS(optObj, "data/optObj.rds")
+
+
+# // TIMING INFO //
+# 1. initPOitns * time_for_lightgbm_training : initial grid calculations
+# 2. iters.n *  ~16 mins                     : "Running local optimum search..." for every iteration
+# 3. iters.n * time_for_lightgbm_training    : bayesian opt steps
+
 
 # Get results
 optObj
@@ -217,17 +347,12 @@ plot(optObj)
 getBestPars(optObj)
 
 
-# Add more itarations (I have to update the package in order to use this function)
+# Add more itarations
 optObj <- addIterations(
   optObj,
   iters.n = 20,
   verbose=1)
 
-
-optObjSimp
-optObj$scoreSummary
-plot(optObjSimp)
-getBestPars(optObj)
 
 
 

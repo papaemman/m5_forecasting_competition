@@ -287,6 +287,10 @@ Naive <- function(x, h, type){
     frcst <- head(rep(as.numeric(tail(x,7)), h), h)  # Seasonal (weekly seasonality) Naive forecasting: Repeat h/7 times the last 7 values of the time series
   }
   
+  if (type=="seasonal_month"){
+    frcst <- head(rep(as.numeric(tail(x,28)), h), h)  # Seasonal (weekly seasonality) Naive forecasting: Repeat h/7 times the last 7 values of the time series
+  }
+  
   return(frcst)
 }
 
@@ -485,8 +489,25 @@ smooth_es <- function(x, h){
 
 
 ## 10. ARIMA
-auto_arima <- function(x, h){
-  as.numeric(forecast(forecast::auto.arima(ts(data = x, frequency = 7)), h=h)$mean)
+
+auto_arima_v2 <- function(x, h){
+  as.numeric(forecast(forecast::auto.arima(y = ts(data = x, frequency = 7)), h=h)$mean)
+}
+
+
+auto_arima_v2 <- function(x, h){
+  as.numeric(forecast(forecast::auto.arima(y = ts(data = x, frequency = 7),
+                                           max.p = 7,
+                                           max.q = 7,
+                                           max.P = 5,
+                                           max.Q = 5,
+                                           max.order = 5,
+                                           max.d = 4,
+                                           max.D = 3,
+                                           biasadj = T,
+                                           nmodels = 200, stepwise = FALSE,
+                                           parallel = T, num.cores = 8,
+                                           ), h=h)$mean)
 }
 
 # auto_arima(x = c(1,2,3,4,5,6,7,1,2,3,4,5,6,7,1,2,3), h = 7)

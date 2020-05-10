@@ -36,3 +36,13 @@ renv::paths$root()
 renv::paths$library()
 renv::paths$cache()
 
+
+renv::dependencies(
+  path = getwd(),
+  root = "~/m5_forecasting_competition",
+  progress = TRUE,
+  errors = "reported",
+  dev = FALSE
+)
+
+
