@@ -55,58 +55,70 @@ length(sales)
 # - with different datasets (from start, last 1 year, last 2 years)
 # - rmse as evaluation metric (because denominator/scaling will be constant in the final evaluation)
 
+# Calculate denominator for wrmsse
+den <- sum(diff(sales)^2) / (length(sales)-1)
+
+
 # H1
 sales <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_1.rds")
 length(sales)
+den <- sum(diff(sales)^2) / (length(sales)-1)
 
 # H2
 sales <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_2.rds")
 View(sales)
 sales <- as.numeric(sales[3, 2:ncol(sales)])
 length(sales)
+den <- sum(diff(sales)^2) / (length(sales)-1)
 
 # H3
 sales <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_3.rds")
 View(sales)
 sales <- as.numeric(sales[3, 2:ncol(sales)])
 length(sales)
+den <- sum(diff(sales)^2) / (length(sales)-1)
 
 # H4
 sales <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_4.rds")
 View(sales)
 sales <- as.numeric(sales[3, 2:ncol(sales)])
 length(sales)
+den <- sum(diff(sales)^2) / (length(sales)-1)
 
 # H5
 sales <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_4.rds")
 View(sales)
 sales <- as.numeric(sales[3, 2:ncol(sales)])
 length(sales)
+den <- sum(diff(sales)^2) / (length(sales)-1)
 
 # H6
 sales <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_6.rds")
 View(sales)
 sales <- as.numeric(sales[3, 3:ncol(sales)])
 length(sales)
+den <- sum(diff(sales)^2) / (length(sales)-1)
 
 # H7
 sales <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_7.rds")
 View(sales)
 sales <- as.numeric(sales[3, 3:ncol(sales)])
 length(sales)
+den <- sum(diff(sales)^2) / (length(sales)-1)
 
 # H8
 sales <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_8.rds")
 View(sales)
 sales <- as.numeric(sales[3, 3:ncol(sales)])
 length(sales)
+den <- sum(diff(sales)^2) / (length(sales)-1)
 
 # H9
 sales <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_9.rds")
 View(sales)
 sales <- as.numeric(sales[3, 3:ncol(sales)])
 length(sales)
-
+den <- sum(diff(sales)^2) / (length(sales)-1)
 
 
 ## Create data frame withe dates and sales
@@ -124,7 +136,7 @@ head(df)
 ggplot(df, aes(ds, y)) + geom_line()
 
 
-## 03. Calculate denominator for wrmsse ----
+## 03. Drop first observations ----
 
 # 1. Drop first 2 days from sales data, to start from Monday
 df <- df[3:nrow(df), ]
@@ -132,10 +144,6 @@ df <- df[3:nrow(df), ]
 # 2. Drop first N days
 N = 1000
 df <- df[1:N, ]
-
-# Denominator
-dim(df)
-den <- sum(diff(df$y)^2) / (nrow(df)-1)
 
 
 ## 04. 3-fold time-series CV process ----

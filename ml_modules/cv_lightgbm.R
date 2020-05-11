@@ -58,13 +58,13 @@ setdiff(categoricals, colnames(tr))  # Errors
 # setdiff(categoricals, which(sapply(tr, function(x){class(x)=="integer"})) %>% names())
 
 
-## Feature Selection (From importnaces) ----
+## 04. Feature Selection (From importnaces) ----
 
 # features <- imp_1$Feature[1:80]
 # categoricals <- categoricals[categoricals %in% features]
 
 
-## 04. Build multiple different models ----
+## 05. Build multiple different models ----
 
 stat_total <- read.csv("data/processed/stat_total.csv", stringsAsFactors = F)
 stores <- unique(stat_total$store_id)
@@ -115,7 +115,9 @@ for (i in 1:nrow(df)){
   # tr <- tr_full[store_id == which(store == stores),]
   
   ## - 1B. One model per DEPARTMENT (7 models) -
+  # tr <- tr[dept_id == which(dept == departments),]
   tr <- tr_full[dept_id == which(dept == departments),]
+  
   
   ## - 1C. One model per STORE - DEPARTMENT (70 models) -
   # tr <- tr_full[store_id == which(store == stores) & dept_id == which(dept == departments),]
@@ -197,19 +199,19 @@ for (i in 1:nrow(df)){
     force_col_wise = TRUE,
     force_row_wise = FALSE,
     
-    max_depth = 50,
-    min_data_in_leaf = 20,              # minimal number of data in one leaf   | aliases: min_data_per_leaf, min_data, min_child_samples
+    max_depth = 50, # -1
+    min_data_in_leaf = 20, # 20              # minimal number of data in one leaf   | aliases: min_data_per_leaf, min_data, min_child_samples
     
     bagging_fraction = 0.6,             # randomly select part of data without resampling  | aliases: sub_row, subsample, bagging
     bagging_freq = 1,                   # frequency for bagging                            | subsample_freq 
     bagging_seed = 33,
     
-    feature_fraction = 0.6,             # for boosting "rf" |  aliases: sub_feature, colsample_bytree
+    feature_fraction = 0.6, # 1             # for boosting "rf" |  aliases: sub_feature, colsample_bytree
     feature_fraction_bynode = 0.5,      # 
     feature_fraction_seed = 33,
     
-    lambda_l1 = 0.1,                  #  | aliases: reg_alpha
-    lambda_l2 = 0.1,                  #  | aliases: reg_lambda, lambda
+    lambda_l1 = 0.1, # 0                  #  | aliases: reg_alpha
+    lambda_l2 = 0.1, # 0                 #  | aliases: reg_lambda, lambda
   
     # min_gain_to_split = 0.01,
     
@@ -271,9 +273,10 @@ for (i in 1:nrow(df)){
   # Select the approprate store_ids - item_ids
   wrmsse_den <- merge(item_group_frc, wrmsse_den , by = c("store_id", "item_id"), all.x = T, sort = F)
   wrmsse_den[,c("store_id", "item_id")] %>% unique() %>% nrow()
+  dim(wrmsse_den)
   weights <- merge(item_group_frc, weights , by = c("store_id", "item_id"), all.x = T, sort = F)
   weights[, c("store_id", "item_id")] %>% unique() %>% nrow()
-  
+  dim(weights)
   
   ## Custom evaluation function
   lgb_model <- lgb.train(params = params, data = train_data,
@@ -285,6 +288,8 @@ for (i in 1:nrow(df)){
                          verbose = 1, record = TRUE, init_model = NULL, colnames = NULL,
                          callbacks = list(), reset_data = FALSE)
   
+  cat("Best score:", lgb_model$best_score, "at", lgb_model$best_iter, "iteration") 
+  cat("Best wrmsse score:", min(unlist(lgb_model$record_evals$valid$wrmsse)), "at", which.min(unlist(lgb_model$record_evals$valid$wrmsse)), "iteration") 
   
   # tic()
   # lgb_model <- lgb.train(params = params, data = tr)

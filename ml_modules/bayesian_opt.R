@@ -25,24 +25,12 @@ fh = 28
 # tr <- readRDS("../kitematic/temp/dt_full_train.rds")
 tr <- readRDS("../kitematic/temp/dt_full_train_without_NAs.rds")   # [1] 39720284      211
 
-
-tables()
-class(tr)
-gc()
-
-tr[1:3, 1:10]
-dim(tr)
-str(tr)
-
-
-
 ## 02. Preprocesssing steps ----
 
 ## Drop zero-demand periods
 nrow(unique(dt[, c("item_id")]))
 dt <- drop_zero_demand_periods(dt, nb_days = 60)
 gc()
-
 
 
 ## 03. Select Features to be use in training ----
@@ -318,7 +306,7 @@ optObj <- bayesOpt(
   iters.n = 8,
   iters.k = 1,
   otherHalting = list(timeLimit = Inf, minUtility = 0),
-  acq = "ei",  # "ucb", "ei", "eips", "poi"
+  acq = "ucb",  # "ucb", "ei", "eips", "poi"
   kappa = 2.576,
   eps = 0,
   parallel = FALSE,
