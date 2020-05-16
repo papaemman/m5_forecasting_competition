@@ -1,8 +1,8 @@
-##################################
-#                                #
-#  Modeling / Training           #
-#                                #
-##################################
+#########################################################
+#                                                       #
+#  Lightgbm classification for zero / non-zero sales    #
+#                                                       #
+#########################################################
 
 ## 00. Load packages ----
 
@@ -20,11 +20,9 @@ fh = 28
 # tr = dt
 # rm(dt)
 
-# tr <- mcreadRDS(file = "../kitematic/temp/dt_full_train_without_NAs.Rds", mc.cores = 4)  
-tr <- readRDS("../kitematic/temp/dt_full_train.rds")                 # [1] 46.027.957    211
-# tr <- readRDS("../kitematic/temp/dt_full_train_without_NAs.rds")   # [1] 39.720.284    211
+# tr <- readRDS("../kitematic/temp/dt_full_train.rds")
+tr <- readRDS("../kitematic/temp/dt_full_train_without_NAs.rds")   # [1] 39720284      211
 
-# Note: If I load dt_full_train_without_NAs the custome evaluation function wiil not be able to calculated correctly.
 
 tables()
 class(tr)
@@ -60,7 +58,7 @@ setdiff(categoricals, colnames(tr))  # Errors
 # setdiff(categoricals, which(sapply(tr, function(x){class(x)=="integer"})) %>% names())
 
 
-## 04. Feature Selection (From importances) ----
+## 04. Feature Selection (From importnaces) ----
 
 # features <- imp_1$Feature[1:80]
 # categoricals <- categoricals[categoricals %in% features]
@@ -93,6 +91,7 @@ df
 # dim(df)
 # head(df)
 
+
 ## 06. Training ----
 
 # Save full training data
@@ -102,7 +101,7 @@ tr_full = tr
 for (i in 1:nrow(df)){
   
   # Test
-  # i=7
+  # i=2
   
   # Print data subsets
   store <- df[i,"store_id"]
@@ -137,6 +136,9 @@ for (i in 1:nrow(df)){
   # gc()
   
   
+  ## Create binary for classification target
+  tr[, sales:=ifelse(sales>0,1,0)]
+  prop.table(table(tr$sales))
   
   ## 2. Data construction parameters (binning)
   
@@ -149,7 +151,7 @@ for (i in 1:nrow(df)){
     feature_pre_filter = F,
     weight_column = ""
   )
-
+  
   
   ## // Train without validation data // 
   
@@ -162,22 +164,16 @@ for (i in 1:nrow(df)){
   
   # Validation data
   flag <- tr$d >= 1914 - 28
-  sapply(tr[flag, ..features], function(x){sum(is.na(x))})
-  sum(is.na(tr[flag, rolling_mean_lag28_t180]))
-  
   valid_data <- data.matrix(tr[flag, ..features])
-  valid_data <- lgb.Dataset(data = valid_data, categorical_feature = categoricals, label = tr[["sales"]][flag], params = data_params, free_raw_data = T)
-  
-  prepare_custom_evaluation_metric_dependencies()
+  valid_data <- lgb.Dataset(data = valid_data, categorical_feature = categoricals, label = tr[["sales"]][flag], params = data_params, free_raw_data = F)
   
   # Training data
-  tr <- tr[!is.na(rolling_mean_lag28_t180),]
   flag <- tr$d < 1914 - 28
   y <- tr[["sales"]][flag]
   train_data <- data.matrix(tr[flag,..features,])
-  train_data <- lgb.Dataset(data = train_data, categorical_feature = categoricals, label = y, params = data_params, free_raw_data = T)
-
-  gc()
+  train_data <- lgb.Dataset(data = train_data, categorical_feature = categoricals, label = y, params = data_params, free_raw_data = F)
+  
+  
   
   ## Define parameters for training
   
@@ -185,11 +181,11 @@ for (i in 1:nrow(df)){
   # R API Documentation: https://lightgbm.readthedocs.io/en/latest/R/index.html
   
   params <- list(
-
+    
     # 1. Core parameters ----
     task = "train",
     
-    objective = "tweedie",           # "regression", "regression_l1", "poisson", "huber", "tweedie" | aliases: objective_type, app, application
+    objective = "binary",           # "regression", "regression_l1", "poisson", "huber", "tweedie" | aliases: objective_type, app, application
     
     boosting = "gbdt",               # Boosting type: "gbdt", "rf", "dart", "goss"
     
@@ -199,7 +195,7 @@ for (i in 1:nrow(df)){
     tree_learner = "serial",         # "serial", "feature", "data", "voting"
     
     seed = 33,
-    nthread = 8,
+    nthread = 8L,
     device_type = "cpu",
     
     # 2. Learning Control Parameters  ----
@@ -220,7 +216,7 @@ for (i in 1:nrow(df)){
     
     lambda_l1 = 0.1, # 0                  #  | aliases: reg_alpha
     lambda_l2 = 0.1, # 0                 #  | aliases: reg_lambda, lambda
-  
+    
     # min_gain_to_split = 0.01,
     
     extra_trees = FALSE,
@@ -230,55 +226,84 @@ for (i in 1:nrow(df)){
     # 3. I/O parameters ----
     
     # Dataset parameters
-    tweedie_variance_power= 1.1,
+    # tweedie_variance_power= 1.1,
     # metric = "rmse",
-
+    
     # 4. Objective parameters ----
     boost_from_average = F
     
     # 5. Metric Parameters ----
-
+    
   )
   
   
   ## // Train model //
-  # tic()
-  # lgb_model <- lgb.train(params = params, data = train_data,
-  #                        valids = list(valid = valid_data), eval_freq = 50, early_stopping_rounds = 400, metric = "rmse", # Validation parameters
-  #                        nrounds = 1000,  
-  #                        categorical_feature = categoricals,
-  #                        verbose = 1, record = TRUE, init_model = NULL, colnames = NULL,
-  #                        callbacks = list(), reset_data = FALSE)
-  # 
-  # toc()
-  # 
-  # cat("Best score:", lgb_model$best_score, "at", lgb_model$best_iter, "iteration") 
+  tic()
+  lgb_model <- lgb.train(params = params, data = train_data,
+                         valids = list(valid = valid_data), eval_freq = 10, early_stopping_rounds = 400, metric = "binary_error", # binary_logloss # Validation parameters
+                        importance_type='split', nrounds = 1000,  
+                         categorical_feature = categoricals,
+                         verbose = 1, record = TRUE, init_model = NULL, colnames = NULL,
+                         callbacks = list(), reset_data = FALSE)
+  
+  toc()
+  
+  cat("Best score:", lgb_model$best_score, "at", lgb_model$best_iter, "iteration") 
+  
+  flag <- tr$d >= 1914 - 28
+  valid_data <- data.matrix(tr[flag, ..features])
+  
+  preds_prob <- predict(lgb_model, valid_data, rawscore = T)
+  df <- data.frame(preds_prob, sales = tr[flag, sales])
+  df <- df %>% arrange(preds_prob)
+  nrow(df)
+  df$sales[which(df$sales==1)] %>% View()
+  View(df)
+  
   
   
   ## // Train with Custom evaluation function //
-  # lgb_model <- lgb.train(params = params, data = train_data,
-  #                        valids = list(valid = valid_data), eval_freq = 50, early_stopping_rounds = 400, eval = custom_rmse_metric, metric = "rmse", # Validation parameters
-  #                        nrounds = 1000,  
-  #                        categorical_feature = categoricals,
-  #                        verbose = 1, record = TRUE, init_model = NULL, colnames = NULL,
-  #                        callbacks = list(), reset_data = FALSE)
+  lgb_model <- lgb.train(params = params, data = train_data,
+                         valids = list(valid = valid_data), eval_freq = 50, early_stopping_rounds = 400, eval = custom_rmse_metric, metric = "rmse", # Validation parameters
+                         nrounds = 1000,  
+                         categorical_feature = categoricals,
+                         verbose = 1, record = TRUE, init_model = NULL, colnames = NULL,
+                         callbacks = list(), reset_data = FALSE)
   
   
   ## // Train with Custom evaluation function - WRMSSE //
   
+  # Load denominator for wrmsSe
+  wrmsse_den <- read.csv("data/wrmsse_den_without_last_28.csv")
   
+  # Load weights for Wrmsse
+  weights <- read.csv("data/bts_weights.csv")
+  
+  # The validation data are:
+  flag <- tr$d >= 1914 - 28
+  item_group_frc <- tr[flag, c("store_id", "item_id")]
+  dim(item_group_frc)
+  item_group_frc %>% unique() %>% nrow()
+  
+  # Select the approprate store_ids - item_ids
+  wrmsse_den <- merge(item_group_frc, wrmsse_den , by = c("store_id", "item_id"), all.x = T, sort = F)
+  wrmsse_den[,c("store_id", "item_id")] %>% unique() %>% nrow()
+  dim(wrmsse_den)
+  weights <- merge(item_group_frc, weights , by = c("store_id", "item_id"), all.x = T, sort = F)
+  weights[, c("store_id", "item_id")] %>% unique() %>% nrow()
+  dim(weights)
   
   ## Custom evaluation function
   lgb_model <- lgb.train(params = params, data = train_data,
                          valids = list(valid = valid_data), eval_freq = 50, early_stopping_rounds = 400, # Validation parameters
-                         eval = custom_wrmsse_metric, # SOS:  wrmsse_den, weights_df, fh
+                         eval = custom_wrmsse_metric, # SOS:  wrmsse_den, weights, fh
                          metric = "rmse", 
                          nrounds = 1000,  
                          categorical_feature = categoricals,
                          verbose = 1, record = TRUE, init_model = NULL, colnames = NULL,
                          callbacks = list(), reset_data = FALSE)
   
-  cat("Best rmse score:", lgb_model$best_score, "at", lgb_model$best_iter, "iteration") 
+  cat("Best score:", lgb_model$best_score, "at", lgb_model$best_iter, "iteration") 
   cat("Best wrmsse score:", min(unlist(lgb_model$record_evals$valid$wrmsse)), "at", which.min(unlist(lgb_model$record_evals$valid$wrmsse)), "iteration") 
   
   # tic()
@@ -295,6 +320,7 @@ for (i in 1:nrow(df)){
 }
 
 
+
 ## Define custom evaluation metric - function
 
 # I need first to re-write the rmse evaluation function as sanity check
@@ -304,7 +330,7 @@ custom_rmse_metric <- function(preds, dtrain) {
   # preds <- labels + 1
   
   rmse <- sqrt(sum((labels-preds)^2)/ length(preds))
-
+  
   ls <- list(name = "rmse",
              value = rmse,
              higher_better = FALSE)
@@ -326,50 +352,11 @@ custom_rmse_metric_v2 <- function(preds, dtrain) {
 
 # WRMSSE
 
-prepare_custom_evaluation_metric_dependencies <- function(){
-  
-  ## Load denominator for wrmsSe
-  wrmsse_den <- read.csv("data/wrmsse_den_without_last_28.csv")
-  
-  ## Load weights for Wrmsse
-  weights_df <- read.csv("data/bts_weights.csv")
-  
-  ## The validation data are:
-  flag <- tr$d >= 1914 - 28
-  item_group_frc <- tr[flag, c("store_id", "item_id")]
-  # dim(item_group_frc)
-  print(paste("Total items:", item_group_frc %>% unique() %>% nrow()))
-  
-  ## Select the approprate store_ids - item_ids
-  
-  wrmsse_den <<- merge(item_group_frc, wrmsse_den , by = c("store_id", "item_id"), all.x = T, sort = F)
-  # wrmsse_den[,c("store_id", "item_id")] %>% unique() %>% nrow()
-  # dim(wrmsse_den)
-  
-  weights_df <<- merge(item_group_frc, weights_df , by = c("store_id", "item_id"), all.x = T, sort = F)
-  # weights_df[, c("store_id", "item_id")] %>% unique() %>% nrow()
-  # dim(weights_df)
-  
-  print("wrmsse_den and weights_df datasets loaded...")
-}
-
-custom_wrmsse_metric <- function(preds, dtrain) { #  wrmsse_den, weights_df, fh
+custom_wrmsse_metric <- function(preds, dtrain) { #  wrmsse_den, weights, fh
   
   ## Test
-
-  # - labels          : Ground truth values from the validation set
-  # - preds           : Predictions from the model
-  # - wrmsse_den      : Denominator for every time serie (item_id, dept_id)
-  # - weight          : Error weight for every time serie
-  # - item_group_frc  : store_id, item_id for the values in validation dataset (labels)
-  
   # labels <- getinfo(valid_data, "label")
-  # preds <- runif(n = length(labels), min = 0, max = 10)
-  # length(labels)/28
-  # dim(wrmsse_den)
-  # dim(weights_df)
-  # dim(item_group_frc)
-  
+  # preds <- runif(n = 14392, min = 0, max = 10)
   
   # Get the ground truth values from the validation dataset
   labels <- getinfo(dtrain, "label")
@@ -381,26 +368,23 @@ custom_wrmsse_metric <- function(preds, dtrain) { #  wrmsse_den, weights_df, fh
   # rmsse <- sqrt( sum((preds_per_ts[[1]] - labels_per_ts[[1]])^2) / ( wrmsse_den[1, "den"] * fh) )
   # rmse <- sqrt(sum((labels_per_ts[[1]]-preds_per_ts[[1]])^2)/ fh)
   
+  preds_per_ts <- preds %>% split(wrmsse_den[,c("store_id", "item_id")])
+  labels_per_ts <- labels %>% split(wrmsse_den[,c("store_id", "item_id")])
+  
   wrmsse_den_unique <- wrmsse_den %>% unique()
-  
-  preds_per_ts <- preds %>% split(wrmsse_den_unique[,c("store_id", "item_id")])
-  labels_per_ts <- labels %>% split(wrmsse_den_unique[,c("store_id", "item_id")])
-  
-  length(preds_per_ts);length(labels_per_ts);dim(wrmsse_den_unique)
-  
   
   rmsse_per_ts <- mapply(FUN = function(x, y, z){
     sqrt( sum((x - y)^2) / ( z * fh) )
   }, preds_per_ts, labels_per_ts, as.list(wrmsse_den_unique$den), USE.NAMES = T, SIMPLIFY = T)
   
   
-  ## 2. Combine the rmsse for all time-series, using the appropriate weights_df
+  ## 2. Combine the rmsse for all time-series, using the appropriate weights
   
   # Test
   # head(weights_unique)
   # head(rmsse_per_ts)
   
-  weights_unique <- unique(weights_df)
+  weights_unique <- unique(weights)
   
   wrmsse = sum(rmsse_per_ts*weights_unique$weight)
   
@@ -419,5 +403,5 @@ custom_wrmsse_metric <- function(preds, dtrain) { #  wrmsse_den, weights_df, fh
 
 
 
- 
+
 

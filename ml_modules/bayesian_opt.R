@@ -231,7 +231,7 @@ scoringFunction <- function(learning_rate, num_leaves,                          
   )
   
   
-  ## Lightgbm Trainining
+  ## Lightgbm Training
 
   lgb_model <- lgb.train(params = params, data = train_data,
                          valids = list(valid = valid_data), eval_freq = 30, early_stopping_rounds = 300, # Validation parameters
