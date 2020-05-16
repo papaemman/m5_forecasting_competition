@@ -5,7 +5,7 @@
 #                                     #
 #######################################
 
-## 00. Source dependecnies----
+## 00. Source dependecnies ----
 
 # Available models
 source("modules/main.R")
@@ -22,6 +22,7 @@ library(RemixAutoML)
 calendar <- read.csv("data/raw/calendar.csv", na.strings = c("_",""), stringsAsFactors = F)
 calendar$date <- as.Date(calendar$date)
 
+# Create external regressors
 x_var <- calendar
 x_var$snap <- x_var$snap_CA + x_var$snap_WI + x_var$snap_TX
 x_var$holiday <- 0
@@ -42,21 +43,22 @@ head(x_var, 10)
 
 ## 02. Import time-series data ----
 
-## Bottom level time series
+## // Bottom level time series //
 time_series_b <- readRDS("data/processed/time_series_b.rds")
 sales <- time_series_b[[100]]$x
 length(sales)
 
 
-## Aggregated time series
+## // Aggregated time series //
 
 # Note: For every time-series (154 time series):
-# - I have to run a cross-validation process, for 4 folds (the same month previous year, the same month pre-prebious year, last month)
+# - I have to run a cross-validation process, for 4 folds (the same month previous year, the same month pre-prebious year, last month, pre-last month)
 # - with different datasets (from start, last 1 year, last 2 years)
-# - rmse as evaluation metric (because denominator/scaling will be constant in the final evaluation)
+# - rmsse as evaluation metric (with denominator/scaling calculated from all the dataset)
 
-# Calculate denominator for wrmsse
-den <- sum(diff(sales)^2) / (length(sales)-1)
+
+# HOW TO: Calculate denominator for wrmsse
+# den <- sum(diff(sales)^2) / (length(sales)-1)
 
 
 # H1
@@ -67,7 +69,7 @@ den <- sum(diff(sales)^2) / (length(sales)-1)
 # H2
 sales <- readRDS("data/processed/aggregated_time_series/sales_aggregation_level_2.rds")
 View(sales)
-sales <- as.numeric(sales[3, 2:ncol(sales)])
+sales <- as.numeric(sales[2, 2:ncol(sales)])
 length(sales)
 den <- sum(diff(sales)^2) / (length(sales)-1)
 
@@ -130,7 +132,7 @@ df <- data.frame(ds = calendar[1:length(sales), "date"],
                  holiday = x_var$holiday[1:length(sales)])
 
 head(df)
-
+dim(df)
 
 ## Plot sales
 ggplot(df, aes(ds, y)) + geom_line()
@@ -139,61 +141,79 @@ ggplot(df, aes(ds, y)) + geom_line()
 ## 03. Drop first observations ----
 
 # 1. Drop first 2 days from sales data, to start from Monday
-df <- df[3:nrow(df), ]
+# df <- df[3:nrow(df), ]
 
-# 2. Drop first N days
-N = 1000
-df <- df[1:N, ]
+# 2. Drop first 1000 days
+# N = 1000
+# df <- df[1:N, ]
 
 
-## 04. 3-fold time-series CV process ----
 
-# Create folds (data frames)
-sales_df_fold1 <- df[1:(nrow(df)-28*3), ]
-valid_df_fold1 <- df[(nrow(df)-28*3+1):(nrow(df)-28*2),]
+## 04. k-fold time-series CV process ----
 
+## // 01. Expanding window: Train and validation sets //
+
+# Last month
+sales_df_fold1 <- df[1:(nrow(df)-28*1),]
+valid_df_fold1 <- df[(nrow(df)-28*1+1):nrow(df),]
+
+# Pre-last month
 sales_df_fold2 <- df[1:(nrow(df)-28*2),]
 valid_df_fold2 <- df[(nrow(df)-28*2+1):(nrow(df)-28*1),]
 
-sales_df_fold3 <- df[1:(nrow(df)-28*1),]
-valid_df_fold3 <- df[(nrow(df)-28*1+1):nrow(df),]
+# Same month as the real validation set but previous year - 2015 (from start)
+sales_df_fold3 <- df[1:which(df$ds == "2015-04-24"),]
+valid_df_fold3 <- df[(which(df$ds == "2015-04-24")+1):(which(df$ds == "2015-04-24")+28),]
 
-# Same month previous year (from start)
-sales_df_fold4 <- df[1:which(df$ds == "2015-04-24"),]
-valid_df_fold4 <- df[(which(df$ds == "2015-04-24")+1):(which(df$ds == "2015-04-24")+28),]
-
-# same month pre-previous year (from start)
-sales_df_fold5 <- df[1:which(df$ds == "2014-04-24"),]
-valid_df_fold5 <- df[(which(df$ds == "2014-04-24")+1):(which(df$ds == "2014-04-24")+28),]
+# Same month as the real validation set but pre-previous year - 2014 (from start)
+sales_df_fold4 <- df[1:which(df$ds == "2014-04-24"),]
+valid_df_fold4 <- df[(which(df$ds == "2014-04-24")+1):(which(df$ds == "2014-04-24")+28),]
 
 
-# Same month previous year (one year before)
-sales_df_fold4 <- df[which(df$ds == "2014-04-24"):which(df$ds == "2015-04-24"),]
-valid_df_fold4 <- df[(which(df$ds == "2015-04-24")+1):(which(df$ds == "2015-04-24")+28),]
+## // 02. Sliding window 1 year: Train and validation sets //
 
-# Same month previous year (two years before)
-sales_df_fold4 <- df[which(df$ds == "2013-04-24"):which(df$ds == "2015-04-24"),]
-valid_df_fold4 <- df[(which(df$ds == "2015-04-24")+1):(which(df$ds == "2015-04-24")+28),]
+# Last month
+sales_df_fold1 <- df[which(df$ds == "2015-03-28"):which(df$ds == "2016-03-27"),]
+valid_df_fold1 <- df[(nrow(df)-28*1+1):nrow(df),]
 
-# Same month previous year (three years before)
-sales_df_fold4 <- df[which(df$ds == "2012-04-24"):which(df$ds == "2015-04-24"),]
-valid_df_fold4 <- df[(which(df$ds == "2015-04-24")+1):(which(df$ds == "2015-04-24")+28),]
+# Pre-last month
+sales_df_fold2 <- df[which(df$ds == "2015-03-01"):which(df$ds == "2016-02-28"),]
+valid_df_fold2 <- df[(nrow(df)-28*2+1):(nrow(df)-28*1),]
 
-# Same month previous year (3 moths before)
-sales_df_fold4 <- df[which(df$ds == "2015-01-24"):which(df$ds == "2015-04-24"),]
-valid_df_fold4 <- df[(which(df$ds == "2015-04-24")+1):(which(df$ds == "2015-04-24")+28),]
+# Same month as the real validation set but previous year - 2015 (from start)
+sales_df_fold3 <- df[which(df$ds == "2014-04-25"):which(df$ds == "2015-04-24"),]
+valid_df_fold3 <- df[(which(df$ds == "2015-04-24")+1):(which(df$ds == "2015-04-24")+28),]
 
-# Same month previous year (6 moths before)
-sales_df_fold4 <- df[which(df$ds == "2014-10-24"):which(df$ds == "2015-04-24"),]
-valid_df_fold4 <- df[(which(df$ds == "2015-04-24")+1):(which(df$ds == "2015-04-24")+28),]
+# Same month as the real validation set but pre-previous year - 2014 (from start)
+sales_df_fold4 <- df[which(df$ds == "2013-04-25"):which(df$ds == "2014-04-24"),]
+valid_df_fold4 <- df[(which(df$ds == "2014-04-24")+1):(which(df$ds == "2014-04-24")+28),]
 
 
-## // CV Calculations //
+## // 02. Sliding window 2 years: Train and validation sets //
+
+# Last month
+sales_df_fold1 <- df[which(df$ds == "2014-03-28"):which(df$ds == "2016-03-27"),]
+valid_df_fold1 <- df[(nrow(df)-28*1+1):nrow(df),]
+
+# Pre-last month
+sales_df_fold2 <- df[which(df$ds == "2014-03-01"):which(df$ds == "2016-02-28"),]
+valid_df_fold2 <- df[(nrow(df)-28*2+1):(nrow(df)-28*1),]
+
+# Same month as the real validation set but previous year - 2015 (from start)
+sales_df_fold3 <- df[which(df$ds == "2013-04-25"):which(df$ds == "2015-04-24"),]
+valid_df_fold3 <- df[(which(df$ds == "2015-04-24")+1):(which(df$ds == "2015-04-24")+28),]
+
+# Same month as the real validation set but pre-previous year - 2014 (from start)
+sales_df_fold4 <- df[which(df$ds == "2012-04-25"):which(df$ds == "2014-04-24"),]
+valid_df_fold4 <- df[(which(df$ds == "2014-04-24")+1):(which(df$ds == "2014-04-24")+28),]
+
+
+## CV Calculations ----
 fold_1 <- ts_forecasting(sales = sales_df_fold1, valid = valid_df_fold1, h = 28, den = den)
 fold_2 <- ts_forecasting(sales = sales_df_fold2, valid = valid_df_fold2, h = 28, den = den)
 fold_3 <- ts_forecasting(sales = sales_df_fold3, valid = valid_df_fold3, h = 28, den = den)
 fold_4 <- ts_forecasting(sales = sales_df_fold4, valid = valid_df_fold4, h = 28, den = den)
-fold_5 <- ts_forecasting(sales = sales_df_fold5, valid = valid_df_fold5, h = 28, den = den)
+
 
 
 ## // Check Results //
@@ -232,6 +252,54 @@ ggplot(df) +
   geom_hline(yintercept = 0, col = "red", linetype = 3)
 
 
+## 05. Test indicidual methods ----
+autots_model <- readRDS("autots_model.rds")
+View(autots_model)
+
+autots_model$ChampionModel
+autots_model$TimeSeriesModel
+
+library(forecast)
+
+# FOLD 1
+model <- nnetar(y = ts(sales_df_fold1$y, frequency = 365), p = 28, P = 4, size = 16, repeats = 20)
+model
+frc <- forecast(object = model, h = 28)
+rmsse(preds = as.numeric(frc$mean), valid = valid_df_fold1$y, h = 28, den = den)
+
+# FOLD 2
+model <- nnetar(y = ts(sales_df_fold2$y, frequency = 365), p = 28, P = 4, size = 16, repeats = 20)
+frc <- forecast(object = model, h = 28)
+rmsse(preds = as.numeric(frc$mean), valid = valid_df_fold2$y, h = 28, den = den)
+
+# FOLD 3
+model <- nnetar(y = ts(sales_df_fold3$y, frequency = 365), p = 28, P = 4, size = 16, repeats = 20)
+frc <- forecast(object = model, h = 28)
+rmsse(preds = as.numeric(frc$mean), valid = valid_df_fold3$y, h = 28, den = den)
+
+# FOLD 4
+model <- nnetar(y = ts(sales_df_fold4$y, frequency = 365), p = 28, P = 4, size = 16, repeats = 20)
+frc <- forecast(object = model, h = 28)
+rmsse(preds = as.numeric(frc$mean), valid = valid_df_fold4$y, h = 28, den = den)
+
+
+df <- data.frame(date = valid_df_fold4$ds,
+                 preds = as.numeric(frc$mean),
+                 preds_pr = preds_prophet_v2,
+                 valid = valid_df_fold4$y)
+ggplot(df) +
+  geom_line(aes(date, valid),size = 1) + geom_point(aes(date, valid),size = 1) +
+  geom_line(aes(date, preds), col = "cyan") + geom_point(aes(date, preds), col = "cyan")+
+  geom_line(aes(date, preds_pr), col = "yellow") + geom_point(aes(date, preds_pr), col = "yellow")
+
+
+rmsse(preds = (as.numeric(frc$mean) + df$preds_pr)/2, valid = valid_df_fold4$y, h = 28, den = den)
+rmsse(preds =  df$preds_pr, valid = valid_df_fold4$y, h = 28, den = den)
+
+
+# Ensemble
+
+  
 ## 05. Define helper functions ----
 
 
@@ -253,8 +321,11 @@ ts_forecasting <- function(sales_df, valid_df, h = 28, den){
   ## TEST
   # sales_df = sales_df_fold4
   # valid_df = valid_df_fold4
+  # tail(sales_df)
+  # head(valid_df)
   # h = 28
   # den = den
+  
   
   
   ## 1. Make Forcastings ----
@@ -262,7 +333,8 @@ ts_forecasting <- function(sales_df, valid_df, h = 28, den){
   # SOS: Functions are define in statistical_univariate_frc_methods.R script
   print("Create forecastings...")
   
-  ## Separate forecastings
+  
+  ## - Separate forecastings models -
   
   preds_snaive <- Naive(x = sales_df$y, h = h, type = "seasonal")
   preds_snaive_month <- Naive(x = sales_df$y, h = h, type = "seasonal_month")
@@ -280,15 +352,18 @@ ts_forecasting <- function(sales_df, valid_df, h = 28, den){
   # preds_autots <- autots_model$Forecast$Forecast_TBATS_ModelFreqTSC
   
   
-  ## Ensemble forecastings
-  preds_ensemble_v1 <- (preds_snaive_month + preds_smooth_es + preds_smooth_es_v2 + preds_auto_arima + preds_prophet)/5
-  preds_ensemble_v2 <- (preds_smooth_es_v2 + preds_prophet)/2
+  ## - Ensemble forecastings models -
+  preds_ensemble_v1 <- (preds_snaive_month + preds_smooth_es + preds_auto_arima + preds_prophet)/4
+  preds_ensemble_v2 <- (preds_snaive_month + preds_smooth_es)/2
   preds_ensemble_v3 <- (preds_snaive_month + preds_prophet + preds_prophet_v2)/3
   preds_ensemble_v4 <- (preds_smooth_es_v2 + preds_prophet_v2)/2
+  preds_ensemble_v5 <- (preds_snaive_month + preds_prophet_v2)/2
+  
   
   ## 2. Residual Analysis ----
   print("Residual analysis")
   
+  # Check residuals per day
   df_residuals <- data.frame(
     res_snaive = preds_snaive - valid_df$y, 
     res_snaive_month = preds_snaive_month - valid_df$y,
@@ -300,12 +375,20 @@ ts_forecasting <- function(sales_df, valid_df, h = 28, den){
     res_ensemble_v1 = preds_ensemble_v1 - valid_df$y,
     res_ensemble_v2 = preds_ensemble_v2 - valid_df$y,
     res_ensemble_v3 = preds_ensemble_v3 - valid_df$y,
-    res_ensemble_v4 = preds_ensemble_v4 -  valid_df$y
+    res_ensemble_v4 = preds_ensemble_v4 -  valid_df$y,
+    res_ensemble_v5 = preds_ensemble_v5 -valid_df$y
   )
   
   # View(df_residuals)
   # 
-  # 
+  # sapply(X = df_residuals %>% mutate(week = rep(c(1,2,3,4), each = 7)) %>%  split(.$week),
+  #        FUN = function(x){
+  #          apply(X = x ,
+  #                MARGIN = 2,
+  #                FUN = function(col)sum(abs(col)))
+  #        })
+             
+                            
   # mean(preds_snaive - valid_df$y)
   # mean(preds_snaive_month - valid_df$y)
   # mean(preds_smooth_es - valid_df$y)
@@ -315,24 +398,49 @@ ts_forecasting <- function(sales_df, valid_df, h = 28, den){
   
   
   ## Plot forecastings
+
+  df <- data.frame(date = valid_df$ds,
+                   preds_snaive,
+                   preds_snaive_month,
+                   preds_smooth_es,
+                   preds_smooth_es_v2,
+                   preds_auto_arima,
+                   preds_prophet,
+                   preds_prophet_v2,
+                   preds_ensemble_v1,
+                   preds_ensemble_v2,
+                   preds_ensemble_v3,
+                   preds_ensemble_v4,
+                   preds_ensemble_v5,
+                   valid = valid_df$y)
+
+  ## Check total RMSSE
+  apply(df %>% select(starts_with("preds")), 2, FUN = function(x)rmsse(preds = x, valid = df$valid, h = 28, den))
+
+
+  ## Check RMSSE per week
+  sapply(X = df %>% mutate(week = rep(c(1,2,3,4), each = 7)) %>%  split(.$week),
+         FUN = function(x){
+           apply(X = x %>% select(starts_with("preds")),
+                 MARGIN = 2,
+                 FUN = function(col)rmsse(preds = col, valid = x[,"valid"], h = 7, den))
+           }) %>% View()
+
+
+
+  p <- ggplot(df) +
+    geom_line(aes(date, valid),size = 1) + geom_point(aes(date, valid),size = 1) +
+    geom_line(aes(date, preds_snaive), col = "cyan") + geom_point(aes(date, preds_snaive), col = "cyan")+
+    geom_line(aes(date, preds_snaive_month), col = "yellow") + geom_point(aes(date, preds_snaive_month), col = "yellow")+
+    geom_line(aes(date, preds_prophet_v2), col = "blue") + geom_point(aes(date, preds_prophet_v2), col = "blue")+
+    geom_line(aes(date, preds_smooth_es), col = "purple") + geom_point(aes(date, preds_smooth_es), col = "purple")+
+    geom_line(aes(date, preds_auto_arima), col = "seagreen1") + geom_point(aes(date, preds_auto_arima), col = "seagreen1")+
+    ggtitle("Validation vs predictions")
+
+  p
+  ggplotly(p)
   
-  # df <- data.frame(date = valid_df$ds,
-  #                  preds = preds_prophet_v2,
-  #                  valid = valid_df$y)
-  # 
-  # 
-  # df$preds_diff_valid <- df$preds - df$valid
-  # 
-  # df %>% summarise(mean(preds_diff_valid), sd(preds_diff_valid))
-  # rmse(preds = df$preds, valid = df$valid, h = 28)
-  # # rmsse(preds = df$preds, valid = df$valid, h = 28, den)
-  # 
-  # ggplot(df) +
-  #   geom_line(aes(date, valid)) + geom_point(aes(date, valid)) +
-  #   geom_line(aes(date,preds), col = "cyan") + geom_point(aes(date, preds), col = "cyan")+
-  #   ggtitle("Validation vs predictions")
-  
-  
+
   
   ## 3. Evaluate forecastings ----
   print("evaluate forecastings...")
@@ -340,62 +448,64 @@ ts_forecasting <- function(sales_df, valid_df, h = 28, den){
   
   ## // RMSSE //
   
-  rmse_snaive <- rmse(preds_snaive, valid_df$y, h)
-  rmse_snaive_month <- rmse(preds_snaive_month, valid_df$y, h)
-
-  rmse_smooth_es <- rmse(preds_smooth_es, valid_df$y, h)
-  rmse_smooth_es_v2 <- rmse(preds_smooth_es_v2, valid_df$y, h)
-
-  rmse_auto_arima <- rmse(preds_auto_arima, valid_df$y, h)
-
-  rmse_prophet <- rmse(preds_prophet, valid_df$y, h)
-  rmse_prophet_v2 <- rmse(preds_prophet_v2, valid_df$y, h)
-
-  # rmsse_autots <- rmsse(preds_autots, valid_df$y, h)
-
-  rmse_ensemble_v1 <- rmse(preds_ensemble_v1, valid_df$y, h)
-  rmse_ensemble_v2 <- rmse(preds_ensemble_v2, valid_df$y, h)
-  rmse_ensemble_v3 <- rmse(preds_ensemble_v3, valid_df$y, h)
-  rmse_ensemble_v4 <- rmse(preds_ensemble_v4, valid_df$y, h)
-
-  rmse_results <- c("rmse_snaive" = rmse_snaive, "rmse_snaive_month" = rmse_snaive_month,
-                     "rmse_smooth_es" = rmse_smooth_es, "rmse_smooth_es_v2" = rmse_smooth_es_v2,
-                     "rmse_auto_arima" = rmse_auto_arima,
-                     "rmse_prophet" = rmse_prophet, "rmse_prophet_v2" = rmse_prophet_v2,
-                     "rmse_ensemble_v1" = rmse_ensemble_v1, "rmse_ensemble_v2" = rmse_ensemble_v2,
-                     "preds_ensemble_v3" = rmse_ensemble_v3, "preds_ensemble_v4" = rmse_ensemble_v4)
-
-  ls <- list("df_residuals" = df_residuals, "rmse_results" = rmse_results)
+  # rmse_snaive <- rmse(preds_snaive, valid_df$y, h)
+  # rmse_snaive_month <- rmse(preds_snaive_month, valid_df$y, h)
+  # 
+  # rmse_smooth_es <- rmse(preds_smooth_es, valid_df$y, h)
+  # rmse_smooth_es_v2 <- rmse(preds_smooth_es_v2, valid_df$y, h)
+  # 
+  # rmse_auto_arima <- rmse(preds_auto_arima, valid_df$y, h)
+  # 
+  # rmse_prophet <- rmse(preds_prophet, valid_df$y, h)
+  # rmse_prophet_v2 <- rmse(preds_prophet_v2, valid_df$y, h)
+  # 
+  # # rmsse_autots <- rmsse(preds_autots, valid_df$y, h)
+  # 
+  # rmse_ensemble_v1 <- rmse(preds_ensemble_v1, valid_df$y, h)
+  # rmse_ensemble_v2 <- rmse(preds_ensemble_v2, valid_df$y, h)
+  # rmse_ensemble_v3 <- rmse(preds_ensemble_v3, valid_df$y, h)
+  # rmse_ensemble_v4 <- rmse(preds_ensemble_v4, valid_df$y, h)
+  # 
+  # rmse_results <- c("rmse_snaive" = rmse_snaive, "rmse_snaive_month" = rmse_snaive_month,
+  #                    "rmse_smooth_es" = rmse_smooth_es, "rmse_smooth_es_v2" = rmse_smooth_es_v2,
+  #                    "rmse_auto_arima" = rmse_auto_arima,
+  #                    "rmse_prophet" = rmse_prophet, "rmse_prophet_v2" = rmse_prophet_v2,
+  #                    "rmse_ensemble_v1" = rmse_ensemble_v1, "rmse_ensemble_v2" = rmse_ensemble_v2,
+  #                    "preds_ensemble_v3" = rmse_ensemble_v3, "preds_ensemble_v4" = rmse_ensemble_v4)
+  # 
+  # ls <- list("df_residuals" = df_residuals, "rmse_results" = rmse_results)
   
   ## // RMSSE //
   
-  # rmsse_snaive <- rmsse(preds_snaive, valid_df$y, h, den)
-  # rmsse_snaive_month <- rmsse(preds_snaive_month, valid_df$y, h, den)
-  # 
-  # rmsse_smooth_es <- rmsse(preds_smooth_es, valid_df$y, h, den)
-  # rmsse_smooth_es_v2 <- rmsse(preds_smooth_es_v2, valid_df$y, h, den)
-  # 
-  # rmsse_auto_arima <- rmsse(preds_auto_arima, valid_df$y, h, den)
-  # 
-  # rmsse_prophet <- rmsse(preds_prophet, valid_df$y, h, den)
-  # rmsse_prophet_v2 <- rmsse(preds_prophet_v2, valid_df$y, h, den)
-  # 
-  # # rmsse_autots <- rmsse(preds_autots, valid_df$y, h, den)
-  # 
-  # rmsse_ensemble_v1 <- rmsse(preds_ensemble_v1, valid_df$y, h, den)
-  # rmsse_ensemble_v2 <- rmsse(preds_ensemble_v2, valid_df$y, h, den)
-  # rmsse_ensemble_v3 <- rmsse(preds_ensemble_v3, valid_df$y, h, den)
-  # rmsse_ensemble_v4 <- rmsse(preds_ensemble_v4, valid_df$y, h, den)
+  rmsse_snaive <- rmsse(preds_snaive, valid_df$y, h, den)
+  rmsse_snaive_month <- rmsse(preds_snaive_month, valid_df$y, h, den)
+
+  rmsse_smooth_es <- rmsse(preds_smooth_es, valid_df$y, h, den)
+  rmsse_smooth_es_v2 <- rmsse(preds_smooth_es_v2, valid_df$y, h, den)
+
+  rmsse_auto_arima <- rmsse(preds_auto_arima, valid_df$y, h, den)
+
+  rmsse_prophet <- rmsse(preds_prophet, valid_df$y, h, den)
+  rmsse_prophet_v2 <- rmsse(preds_prophet_v2, valid_df$y, h, den)
+
+  # rmsse_autots <- rmsse(preds_autots, valid_df$y, h, den)
+
+  rmsse_ensemble_v1 <- rmsse(preds_ensemble_v1, valid_df$y, h, den)
+  rmsse_ensemble_v2 <- rmsse(preds_ensemble_v2, valid_df$y, h, den)
+  rmsse_ensemble_v3 <- rmsse(preds_ensemble_v3, valid_df$y, h, den)
+  rmsse_ensemble_v4 <- rmsse(preds_ensemble_v4, valid_df$y, h, den)
+  rmsse_ensemble_v5 <- rmsse(preds_ensemble_v5, valid_df$y, h, den)
+
+  rmsse_results <- c("rmsse_snaive" = rmsse_snaive, "rmsse_snaive_month" = rmsse_snaive_month,
+                     "rmsse_smooth_es" = rmsse_smooth_es, "rmsse_smooth_es_v2" = rmsse_smooth_es_v2,
+                     "rmsse_auto_arima" = rmsse_auto_arima,
+                     "rmsse_prophet" = rmsse_prophet, "rmsse_prophet_v2" = rmsse_prophet_v2,
+                     "rmsse_ensemble_v1" = rmsse_ensemble_v1, "rmsse_ensemble_v2" = rmsse_ensemble_v2,
+                     "preds_ensemble_v3" = rmsse_ensemble_v3, "preds_ensemble_v4" = rmsse_ensemble_v4,
+                     "rmsse_ensemble_v5" = rmsse_ensemble_v5)
   
-  # rmsse_results <- c("rmsse_snaive" = rmsse_snaive, "rmsse_snaive_month" = rmsse_snaive_month,
-  #                    "rmsse_smooth_es" = rmsse_smooth_es, "rmsse_smooth_es_v2" = rmsse_smooth_es_v2,
-  #                    "rmsse_auto_arima" = rmsse_auto_arima,
-  #                    "rmsse_prophet" = rmsse_prophet, "rmsse_prophet_v2" = rmsse_prophet_v2,
-  #                    "rmsse_ensemble_v1" = rmsse_ensemble_v1, "rmsse_ensemble_v2" = rmsse_ensemble_v2,
-  #                    "preds_ensemble_v3" = rmsse_ensemble_v3, "preds_ensemble_v4" = rmsse_ensemble_v4)
-  
-  # ls <- list("df_residuals" = df_residuals, "rmsse_results" = rmsse_results)
-  
+  ls <- list("df_residuals" = df_residuals, "rmsse_results" = rmsse_results)
+  ls
   
   ##  // Return results //
   
