@@ -1,0 +1,39 @@
+==============================
+INSTRUCTIONS
+=============================
+
+
+--> ML pipeline
+
+- Create and Save training data
+- Train and save model(s)
+- Make predictions (forecastings) and create submission file
+
+1. 01_create_training_dataset.R
+2. 02_lgbm_training.R
+3. 03_evaluate_experiment_v2.R (evaluate_experiment.R)
+
+
+Scripts to load training features and model parameters
+1. features.R 
+2. lgb_parameters.R
+
+
+-----------------------------------------------------------------
+Hyperparameter-tuning with custom evaluation metric (wrmsse)
+
+1. bayesian_opt.R 
+2. cv_lightgbm.R
+3. grid_search_lightgbm.R
+4. helper_files_for_wrmsse.R
+
+Other approaches
+5. lgb_classification.R
+6. ranger_rf.R
+
+------------------------------------------------------------------
+
+
+
+
+

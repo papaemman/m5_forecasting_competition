@@ -147,7 +147,7 @@ toc() # ~ 6 hours
 
 
 # Save forecastings
-saveRDS(object = frc_total_prophet_v2, file = "data/forecastings/frc_total_prophet_v2.RDS")
+saveRDS(object = frc_total_prophet_v2, file = "frc_total_prophet_v2.RDS")
 
 # Stop cluster and clean the memory
 stopCluster(cl = cl) # This error happens when code from library(doSNOW) and library(parallel) is mixed.
@@ -158,24 +158,26 @@ gc()
 
 
 ## 05. Check-Plot forecastings -----
+dim(df)
 
 head(colnames(df))
-frc <- readRDS("frc_prophet_v2_full.rds")
+frc_total_prophet_v2 <- readRDS("frc_total_prophet_v2.RDS")
+dim(frc_total_prophet_v2)
 
 new_df <- data.frame(ds = calendar[1:(1913+28), "date"],
-                     y = c(df$Total, frc_total_prophet_v2[1,]),
+                     y = c(df[,123+5], frc_total_prophet_v2[123,]),
                      type = c(rep("true", 1913), rep("frc", 28)))
 
-p <- ggplot(new_df) + geom_line(aes(ds,y, col = type))
+p <- ggplot(new_df) + geom_line(aes(ds,y, col = type)) + geom_point(aes(ds,y, col = type))
 ggplotly(p)
 
 
 
 ## 06. Optimal Combination for base forecastings (create reconciled forecastings) ----
 
-frc <- readRDS("frc_prophet_v2_full.rds")
-frc <- t(frc)
-dim(frc)
+frc_total_prophet_v2 <- readRDS("frc_total_prophet_v2.RDS")
+frc_total_prophet_v2 <- t(frc_total_prophet_v2)
+dim(frc_total_prophet_v2)
 
 # Number of time series at each group level: 1 3 10 3 7 9 21 30 70 3049 9147 30490 = 42840
 1+3+10+3+7+9+21+30+70+3049+9147 # 12350
@@ -185,13 +187,25 @@ dim(frc)
 groups_matrix <- get_groups(y)
 
 
+# Ensemble with bts forecastings
+submission_24 <- read.csv("data/pnt_submissions/submission_ensembled24.csv")
+submission_24 <- submission_24 %>% filter(grepl(pattern = "validation", x = .$id))
+submission_24 <- merge(x = data.frame(id = sales_raw$id, stringsAsFactors = F), y = submission_24, sort = F)
+head(submission_24)
+dim(submission_24)
+submission_24$id <- NULL
+
+dim(frc_total_prophet_v2)
+frc_total_prophet_v2[,12351:ncol(frc_total_prophet_v2)] <- t(submission_24)
+
+
 ## 1. Without weights
 
-frc_opt_v0 <- combinef(fcasts = frc,
-                groups = groups_matrix,
-                weights = NULL ,             #  NULL or weights_vec
-                keep ="bottom",              # c("gts", "all", "bottom")
-                algorithms = "cg"            # c("lu", "cg", "chol", "recursive", "slm")
+frc_opt_v0 <- combinef(fcasts = frc_total_prophet_v2,
+                       groups = groups_matrix,
+                       weights = NULL ,             #  NULL or weights_vec
+                       keep ="bottom",              # c("gts", "all", "bottom")
+                       algorithms = "cg"            # c("lu", "cg", "chol", "recursive", "slm")
 )
 
 dim(frc_opt_v0)
@@ -204,29 +218,30 @@ weights_vec <- weigths$Weight
 length(weights_vec)
 
 tic()  
-frc_opt_v1 <- combinef(fcasts = frc,
-                  groups = groups_matrix,
-                  weights = weights_vec+0.0000001,     #  NULL or weights_vec
-                  keep ="bottom",                     # c("gts", "all", "bottom")
-                  algorithms = "lu"                   # c("lu", "cg", "chol", "recursive", "slm")
+frc_opt_v1 <- combinef(fcasts = frc_total_prophet_v2,
+                       groups = groups_matrix,
+                       weights = weights_vec+0.0000001,     #  NULL or weights_vec
+                       keep ="bottom",                     # c("gts", "all", "bottom")
+                       algorithms = "lu"                   # c("lu", "cg", "chol", "recursive", "slm")
 )
 toc()
+
 
 
 ## Check reconciled forecastings
 
 ## How much the base forecastings changed, after optimal combination
-sub_v0 %>% select(starts_with("F")) %>% head(30490) %>% colSums() - frc[,1]
-sub_v1 %>% select(starts_with("F")) %>% head(30490) %>% colSums() - frc[,1]
+sub_v0 %>% select(starts_with("F")) %>% head(30490) %>% colSums() - frc_total_prophet_v2[,1]
+sub_v1 %>% select(starts_with("F")) %>% head(30490) %>% colSums() - frc_total_prophet_v2[,1]
 
 
 ## 07. Create submission files ----
 
-sub_v0 <- create_submission_file(frc_opt_combination = frc_opt_v0)
-sub_v1 <- create_submission_file(frc_opt_combination = frc_opt_v1)
+sub_v2 <- create_submission_file(frc_opt_combination = frc_opt_v0)
+sub_v3 <- create_submission_file(frc_opt_combination = frc_opt_v1)
 
-write.csv(sub_v0, "sub_v0.csv", row.names = F)
-write.csv(sub_v1, "sub_v1.csv", row.names = F)
+write.csv(sub_v2, "sub_v2.csv", row.names = F)
+write.csv(sub_v3, "sub_v3.csv", row.names = F)
 
 
 ## Create submission files function

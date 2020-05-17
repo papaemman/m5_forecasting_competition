@@ -22,10 +22,10 @@ for (i in 1:length(time_series_b)) {
 
 wrmsse_den <- data.table(den, store_id, item_id)
 
-cols <- c("item_id", "store_id")
-wrmsse_den[, (cols) := lapply(.SD, function(z) as.integer(as.factor(z))), .SDcols = cols]
+# cols <- c("item_id", "store_id")
+# wrmsse_den[, (cols) := lapply(.SD, function(z) as.integer(as.factor(z))), .SDcols = cols]
 
-write.csv(wrmsse_den, file = "data/wrmsse_den.csv", row.names = F, quote = F)
+write.csv(wrmsse_den, file = "data/wrmsse_den_v2.csv", row.names = F, quote = F)
 
 
 
@@ -46,10 +46,10 @@ for (i in 1:length(time_series_b)) {
 
 wrmsse_den_without_last_28 <- data.table(den, store_id, item_id)
 
-cols <- c("item_id", "store_id")
-wrmsse_den_without_last_28[, (cols) := lapply(.SD, function(z) as.integer(as.factor(z))), .SDcols = cols]
+# cols <- c("item_id", "store_id")
+# wrmsse_den_without_last_28[, (cols) := lapply(.SD, function(z) as.integer(as.factor(z))), .SDcols = cols]
 
-write.csv(wrmsse_den_without_last_28, file = "data/wrmsse_den_without_last_28.csv", row.names = F, quote = F)
+write.csv(wrmsse_den_without_last_28, file = "data/wrmsse_den_without_last_28_v2.csv", row.names = F, quote = F)
 
 
 
@@ -68,10 +68,10 @@ stat_total <- stat_total %>%
 stat_total <- as.data.table(stat_total)
 stat_total
 
-cols <- c("item_id", "store_id")
-stat_total[, (cols) := lapply(.SD, function(z) as.integer(as.factor(z))), .SDcols = cols]
+# cols <- c("item_id", "store_id")
+# stat_total[, (cols) := lapply(.SD, function(z) as.integer(as.factor(z))), .SDcols = cols]
 
-write.csv(stat_total, file = "data/bts_weights.csv", row.names = F, quote = F)
+write.csv(stat_total, file = "data/bts_weights_v2.csv", row.names = F, quote = F)
 
 
 

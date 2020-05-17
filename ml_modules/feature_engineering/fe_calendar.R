@@ -4,18 +4,22 @@
 #                                #
 ##################################
 
+## TASK: Create features from calendar and save them.
 
-# library(data.table)
-# library(RcppRoll)
-# library(tidyverse)
+## Load packages
+library(data.table)
+library(RcppRoll)
+library(tidyverse)
 
 
 ## Run the crate_calendar_features() function and save the results
-# calendar <- create_calendar_features(calendar)
-# saveRDS(calendar, "data/raw/calendar_full.rds")
+calendar <- fread("data/raw/calendar.csv", na.strings = c("", "_"))
+calendar$date <- as.Date(calendar$date)
+calendar <- create_calendar_features(calendar)
+saveRDS(calendar, "data/raw/calendar_full.rds")
 
 
-## // Function: crate_calendar_features() //
+## // Function: create_calendar_features() //
 
 create_calendar_features <- function(calendar){
   
@@ -28,7 +32,7 @@ create_calendar_features <- function(calendar){
   
   calendar[, `:=`(day_month = lubridate::mday(date), day_quarter = lubridate::qday(date), day_year = yday(date))       # Day
            ][,`:=`(week_month = ceiling(day_month/7), week_quarter = ceiling(day_quarter/7), week_year = week(date),   # Week
-                   weekend = ifelse(wday %in% c(1,2), T, F),                                                           # Weekend
+                   weekend = ifelse(wday %in% c(1,2), 1, 0),                                                           # Weekend
                    month_quarter = ifelse(month%%3 == 0, 3, month%%3),                                                 # Month
                    quart = quarter(date),                                                                              # Quarter
                    semester = ifelse(month<=6, 0, 1)                                                                   # Semester 
@@ -141,7 +145,7 @@ create_calendar_features <- function(calendar){
   # 
   
   
-  ## 05. One-hot endoding for event_type_1 ----
+  ## 05. One-hot encoding for event_type_1 ----
   
   calendar <- calendar %>% 
     mutate(sporting_event = case_when(event_type_1 == "Sporting" | event_type_2 == "Sporting" ~ 1L, T ~ 0L),
@@ -169,7 +173,7 @@ create_calendar_features <- function(calendar){
   ## 07. Lead features ----
   
   # Day has event and leads
-  calendar[, `:=`(has_event = event_type_1!=0)
+  calendar[, `:=`(has_event = as.numeric(event_type_1!=0))
            ][,`:=`(has_event_lead_t1 = lead(has_event, n = 1),
                    has_event_lead_t2 = lead(has_event, n = 2),
                    has_event_lead_t3 = lead(has_event, n = 3))]

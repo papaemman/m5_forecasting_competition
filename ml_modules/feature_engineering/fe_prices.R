@@ -4,25 +4,29 @@
 #                                #
 ##################################
 
+## TASK: Create features from prices and save them.
 
-# library(dplyr)
-# library(tidyr)
-# library(purrr)
-# library(data.table)
-# library(RcppRoll)
+## Load packages
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(data.table)
+library(RcppRoll)
 
 
-## Crate extra prices features
+## Crate extra prices features ans save them
 
-# prices <- fread("data/raw/sell_prices.csv")
-# prices <- create_prices_features(prices)
-# saveRDS(prices, "data/raw/prices_full.rds")
+prices <- fread("data/raw/sell_prices.csv")
+prices <- create_prices_features(prices)
+saveRDS(prices, "data/raw/prices_full.rds")
 
 
 create_prices_features <- function(prices){
   
+  # TEST
+  # prices <- fread("data/raw/sell_prices.csv")
   
-  ## FE 01: Item prices compared between stores ----
+  ## FE 01: Compare Item prices between stores ----
   
   prices_wide <- tidyr::pivot_wider(data = prices, names_from = store_id, values_from =  sell_price)
   
@@ -56,25 +60,27 @@ create_prices_features <- function(prices){
     min_price = pmap(select(., CA_1, CA_2, CA_3, CA_4, TX_1, TX_2, TX_3, WI_1, WI_2, WI_3), min, na.rm = T),
     max_price = pmap(select(., CA_1, CA_2, CA_3, CA_4, TX_1, TX_2, TX_3, WI_1, WI_2, WI_3), max, na.rm = T),
     
-    CA_1_best_price = CA_1 == min_price,
-    CA_2_best_price = CA_2 == min_price,
-    CA_3_best_price = CA_3 == min_price,
-    CA_4_best_price = CA_4 == min_price,
-    TX_1_best_price = TX_1 == min_price,
-    TX_2_best_price = TX_2 == min_price,
-    TX_3_best_price = TX_3 == min_price,
-    WI_1_best_price = WI_1 == min_price,
-    WI_2_best_price = WI_2 == min_price,
-    WI_3_best_price = WI_3 == min_price
+    CA_1_best_price = as.numeric(CA_1 == min_price),
+    CA_2_best_price = as.numeric(CA_2 == min_price),
+    CA_3_best_price = as.numeric(CA_3 == min_price),
+    CA_4_best_price = as.numeric(CA_4 == min_price),
+    TX_1_best_price = as.numeric(TX_1 == min_price),
+    TX_2_best_price = as.numeric(TX_2 == min_price),
+    TX_3_best_price = as.numeric(TX_3 == min_price),
+    WI_1_best_price = as.numeric(WI_1 == min_price),
+    WI_2_best_price = as.numeric(WI_2 == min_price),
+    WI_3_best_price = as.numeric(WI_3 == min_price)
     
   )
   
+  # Round results
   col_names <- prices_wide %>% select_if(is.numeric) %>% colnames()
   prices_wide[,col_names] <- round(prices_wide[,col_names], digits = 3)
   
   # View(prices_wide)
   
-  # prices_long_price
+  
+  ## Transform to long format again: prices_long_price
   prices_long_price <- prices_wide %>%
     select(item_id, wm_yr_wk, CA_1, CA_2, CA_3, CA_4, TX_1, TX_2, TX_3, WI_1, WI_2, WI_3) %>% 
     pivot_longer(., cols = c(CA_1, CA_2, CA_3, CA_4, TX_1, TX_2, TX_3, WI_1, WI_2, WI_3))
@@ -170,7 +176,7 @@ create_prices_features <- function(prices){
   
   prices[is.nan(sell_price_diff_to_max_diff), sell_price_diff_to_max_diff:=0]
   
-  View(head(prices,200))
+  # View(head(prices,200))
   
   
   ## Merge the features from prices_long ----
@@ -196,6 +202,15 @@ create_prices_features <- function(prices){
 
 
 
+
+## Sanity check
+
+# prices_raw <- fread("data/raw/sell_prices.csv")
+# prices <- create_prices_features(prices_raw)
+# 
+#  merge(prices_raw, prices %>% select(store_id, item_id, wm_yr_wk, sell_price), by = c("store_id", "item_id", "wm_yr_wk")) %>% 
+#    filter(sell_price.x != sell_price.y)
+# # Empty
 
 
 ## Explore sell prices data

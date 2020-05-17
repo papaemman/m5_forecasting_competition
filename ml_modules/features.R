@@ -13,7 +13,7 @@ features <- c(
   
   # "item_id",  "dept_id", "cat_id",
   
-  "store_id", "state_id", 
+  # "store_id", "state_id", 
   
   # "d", 
   
@@ -64,7 +64,7 @@ features <- c(
   
   "snap",
   
-  "lngth", "ADI", "CV2", "pz", "Min", "Low25", "Mean", "Median", "Up25", "Max", "dollar_sales",
+  "lngth", "ADI", "CV2", "pz", "Low25", "Mean", "Median", "Up25", "Max", "dollar_sales",
   
   # "Type",
   "type_1", "type_2", "type_3", "type_4",
@@ -104,7 +104,7 @@ features <- c(
   "lag_t28_total_store_cat_sales", "lag_t28_total_store_dept_sales", "lag_t28_total_item_sales" ,                  
   "lag_t28_total_item_state_sales",
   
-  "meanl_last_total_sales", "mean_last_total_state_sales", "mean_last_total_store_sales",
+  "mean_last_total_sales", "mean_last_total_state_sales", "mean_last_total_store_sales",
   "mean_last_total_cat_sales", "mean_last_total_dept_sales","mean_last_total_state_cat_sales",
   "mean_last_total_state_dept_sales","mean_last_total_store_cat_sales",            
   "mean_last_total_store_dept_sales", "mean_last_total_item_sales", "mean_last_total_item_state_sales",           
@@ -112,7 +112,14 @@ features <- c(
   "rolling_mean_lag_t28_total_sales", "rolling_mean_lag_t28_total_state_sales", "rolling_mean_lag_t28_total_store_sales",     
   "rolling_mean_lag_t28_total_cat_sales", "rolling_mean_lag_t28_total_dept_sales", "rolling_mean_lag_t28_total_state_cat_sales", 
   "rolling_mean_lag_t28_total_state_dept_sales" ,"rolling_mean_lag_t28_total_store_cat_sales", "rolling_mean_lag_t28_total_store_dept_sales",
-  "rolling_mean_lag_t28_total_item_sales", "rolling_mean_lag_t28_total_item_state_sales"
+  "rolling_mean_lag_t28_total_item_sales", "rolling_mean_lag_t28_total_item_state_sales",
+  
+  
+  "enc_state_mean", "enc_state_sd", "enc_store_mean", "enc_store_sd", "enc_cat_mean", "enc_cat_sd",           
+  "enc_dept_mean", "enc_dept_sd", "enc_state_cat_mean", "enc_state_cat_sd", "enc_state_dept_mean", "enc_state_dept_sd",     
+  "enc_store_cat_mean", "enc_store_cat_sd", "enc_store_dept_mean", "enc_store_dept_sd", 
+  "enc_item_mean", "enc_item_sd", "enc_item_max",
+  "enc_item_state_mean", "enc_item_state_sd", "enc_item_state_max"    
   
   # "orig", "rleLength" 
   
@@ -123,7 +130,7 @@ features <- c(
 
 categoricals <- c(
   
-  "store_id", "state_id",
+  # "store_id", "state_id",
   
   "wday", "month", "year",
   
@@ -146,8 +153,8 @@ categoricals <- c(
   "snap",
   
   # "Type", 
-  "type_1", "type_2", "type_3", "type_4",
+  "type_1", "type_2", "type_3", "type_4"
   
-  "Low25", "Mean", "Median", "Up25", "Max"
+  # "Low25", "Mean", "Median", "Up25", "Max"
   
 )

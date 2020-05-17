@@ -20,11 +20,7 @@ fh = 28
 # tr = dt
 # rm(dt)
 
-# tr <- mcreadRDS(file = "../kitematic/temp/dt_full_train_without_NAs.Rds", mc.cores = 4)  
-tr <- readRDS("../kitematic/temp/dt_full_train.rds")                 # [1] 46.027.957    211
-# tr <- readRDS("../kitematic/temp/dt_full_train_without_NAs.rds")   # [1] 39.720.284    211
-
-# Note: If I load dt_full_train_without_NAs the custome evaluation function wiil not be able to calculated correctly.
+tr <- readRDS("../kitematic/temp/dt_full_train.rds")  # 46027957      232
 
 tables()
 class(tr)
@@ -55,9 +51,8 @@ setdiff(colnames(tr), features)  # Features to not include in model
 
 # Which of these features should be treaten as categorical
 categoricals
+setdiff(categoricals, features)      # Errors
 setdiff(categoricals, colnames(tr))  # Errors
-
-# setdiff(categoricals, which(sapply(tr, function(x){class(x)=="integer"})) %>% names())
 
 
 ## 04. Feature Selection (From importances) ----
@@ -73,8 +68,8 @@ stores <- unique(stat_total$store_id)
 departments <- unique(stat_total$dept_id)
 
 # Define the rights order in tr dataset (alphabetical order)
-stores <- c("CA_1", "CA_2", "CA_3", "CA_4", "TX_1", "TX_2", "TX_3", "WI_1", "WI_2", "WI_3")
-departments <- c("FOODS_1", "FOODS_2", "FOODS_3", "HOBBIES_1", "HOBBIES_2", "HOUSEHOLD_1", "HOUSEHOLD_2")
+# stores <- c("CA_1", "CA_2", "CA_3", "CA_4", "TX_1", "TX_2", "TX_3", "WI_1", "WI_2", "WI_3")
+# departments <- c("FOODS_1", "FOODS_2", "FOODS_3", "HOBBIES_1", "HOBBIES_2", "HOUSEHOLD_1", "HOUSEHOLD_2")
 
 
 ## - A. One model per STORE (10 models) -
@@ -102,7 +97,7 @@ tr_full = tr
 for (i in 1:nrow(df)){
   
   # Test
-  # i=7
+  # i=1
   
   # Print data subsets
   store <- df[i,"store_id"]
@@ -117,8 +112,8 @@ for (i in 1:nrow(df)){
   # tr <- tr_full[store_id == which(store == stores),]
   
   ## - 1B. One model per DEPARTMENT (7 models) -
-  tr <- tr[dept_id == which(dept == departments),]
-  # tr <- tr_full[dept_id == which(dept == departments),]
+  # tr <- tr[dept_id == which(dept == departments),]
+  tr <- tr_full[dept_id == dept,]
   
   
   ## - 1C. One model per STORE - DEPARTMENT (70 models) -
@@ -127,14 +122,17 @@ for (i in 1:nrow(df)){
   
   ## Deal with NAs
   
-  # dim(tr)   
-  # anyNA(tr)
-  # sapply(tr, function(x){sum(is.na(x))})             # Check NAs in every column
-  # nrow(unique(tr[,j = c("item_id", "store_id")]))    # Total items (416)
+  # dim(tr)    
+  # anyNA(tr)                                          # TRUE
+  # nrow(unique(tr[,j = c("item_id", "store_id")]))    # Total items (5150)
   # tr <- tr[!is.na(rolling_mean_lag28_t180),]
-  # dim(tr)                                            # 565671    163
-  # nrow(unique(tr[,j = c("item_id")]))                # Total items (416)
+  # dim(tr)                                            # 7.125.749     232
+  # nrow(unique(tr[,j = c("item_id", "store_id")]))    # Total items (5148)   (Note: 2 items completely lost!)
+  # anyNA(tr)                                          # FALSE
   # gc()
+  
+  ## Sanity check
+  # View(tr[item_id == "HOUSEHOLD_2_002" & store_id == 'CA_1', c("d", "sales", "Max", "lag_t1", "lag_t2")])
   
   
   
@@ -162,8 +160,7 @@ for (i in 1:nrow(df)){
   
   # Validation data
   flag <- tr$d >= 1914 - 28
-  sapply(tr[flag, ..features], function(x){sum(is.na(x))})
-  sum(is.na(tr[flag, rolling_mean_lag28_t180]))
+  sum(is.na(tr[flag, rolling_mean_lag28_t180])) # NAs in validation
   
   valid_data <- data.matrix(tr[flag, ..features])
   valid_data <- lgb.Dataset(data = valid_data, categorical_feature = categoricals, label = tr[["sales"]][flag], params = data_params, free_raw_data = T)
@@ -171,13 +168,13 @@ for (i in 1:nrow(df)){
   prepare_custom_evaluation_metric_dependencies()
   
   # Training data
-  tr <- tr[!is.na(rolling_mean_lag28_t180),]
-  flag <- tr$d < 1914 - 28
+  tr <- tr[!is.na(rolling_mean_lag28_t180),]  # Drop NA values   -  anyNA(tr)
+  flag <- tr$d < 1914 - 28 
   y <- tr[["sales"]][flag]
   train_data <- data.matrix(tr[flag,..features,])
   train_data <- lgb.Dataset(data = train_data, categorical_feature = categoricals, label = y, params = data_params, free_raw_data = T)
-
   gc()
+  
   
   ## Define parameters for training
   
@@ -267,7 +264,6 @@ for (i in 1:nrow(df)){
   ## // Train with Custom evaluation function - WRMSSE //
   
   
-  
   ## Custom evaluation function
   lgb_model <- lgb.train(params = params, data = train_data,
                          valids = list(valid = valid_data), eval_freq = 50, early_stopping_rounds = 400, # Validation parameters
@@ -329,10 +325,11 @@ custom_rmse_metric_v2 <- function(preds, dtrain) {
 prepare_custom_evaluation_metric_dependencies <- function(){
   
   ## Load denominator for wrmsSe
-  wrmsse_den <- read.csv("data/wrmsse_den_without_last_28.csv")
+  # wrmsse_den <- read.csv("data/wrmsse_den_without_last_28_v2.csv")
+  wrmsse_den <- read.csv("data/wrmsse_den_v2.csv")
   
   ## Load weights for Wrmsse
-  weights_df <- read.csv("data/bts_weights.csv")
+  weights_df <- read.csv("data/bts_weights_v2.csv")
   
   ## The validation data are:
   flag <- tr$d >= 1914 - 28
@@ -352,6 +349,7 @@ prepare_custom_evaluation_metric_dependencies <- function(){
   
   print("wrmsse_den and weights_df datasets loaded...")
 }
+
 
 custom_wrmsse_metric <- function(preds, dtrain) { #  wrmsse_den, weights_df, fh
   

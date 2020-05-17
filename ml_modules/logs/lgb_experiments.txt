@@ -1,0 +1,134 @@
+============================
+Lightgbm experiments
+============================
+
+Notes:
+
+1. Validation score has correct feature vectors, but the real test set don't!
+   So these wrmsse scores are (very) optimistic.
+    
+2. lightgbm can make predictions even with NAs in features  
+
+----------------------------------------------------------------------------------------------
+
+Notes: 
+lightgbm can make predictions with NAs in features (will not throw an error).
+But these predicions are far from optimal. So I have to apply an NA impoutation technique before prediction!
+
+The same happend when I try to make predictions for the test set.
+
+
+
+// SEPARATE MODELS per dept_id://
+
+Total sum:
+
+
+-> FOODS_1
+
+Items - Store     : 2160
+NAs in validation : 0
+
+Best rmse score   : 1.829106 at 237 iteration
+Best wrmsse score : 0.048750 at 614 iteration
+
+
+-> FOODS_2
+
+Items - Store: 3980
+NAs in validation: 1660
+
+Best rmse score   : 1.761033 at 253 iteration
+Best wrmsse score : 0.1334974 at 254 iteration
+
+
+-> FOODS_3
+
+Items - Store: 8230
+NAs in validation:
+[LightGBM] [Info] Total Bins 29244
+[LightGBM] [Info] Number of data points in the train set: 10411948, number of used features: 192
+Best rmse score   : 2.580551 at 428 iteration
+Best wrmsse score : 0.351719 at 668 iteration
+
+-> HOBBIES_1
+
+Items - Store: 4160
+NAs in validation: 28
+[LightGBM] [Info] Total Bins 27427
+[LightGBM] [Info] Number of data points in the train set: 5491057, number of used features: 212
+
+Best rmse score   : 1.84957 at 401 iteration
+Best wrmsse score : 0.15040 at 451 iteration
+
+
+-> HOBBIES_2
+
+
+-> HOUSEHOLD_1
+
+
+-> HOUSEHOLD_2
+
+Items - Store: 5150
+NAs in validation: 56
+[LightGBM] [Info] Total Bins 24259
+[LightGBM] [Info] Number of data points in the train set: 6981605, number of used features: 212
+
+Best rmse score   : 0.764222 at 401 iteration
+Best wrmsse score : 0.055709 at 451 iteration
+
+
+--------------------------------------------------------------------------
+
+// Train and Save models timing logs //
+
+
+[1] "Store:  | Dept: FOODS_1"
+[LightGBM] [Warning] Met categorical feature which contains sparse values. Consider renumbering to consecutive integers started from zero
+[LightGBM] [Info] Total Bins 25834
+[LightGBM] [Info] Number of data points in the train set: 3530738, number of used features: 212
+330.034 sec elapsed
+
+
+"Store:  | Dept: FOODS_2"
+[LightGBM] [Warning] Met categorical feature which contains sparse values. Consider renumbering to consecutive integers started from zero
+[LightGBM] [Info] Total Bins 26534
+[LightGBM] [Info] Number of data points in the train set: 5520355, number of used features: 212
+500.891 sec elapsed
+
+"Store:  | Dept: FOODS_3"
+[LightGBM] [Warning] Met categorical feature which contains sparse values. Consider renumbering to consecutive integers started from zero
+[LightGBM] [Info] Total Bins 29286
+[LightGBM] [Info] Number of data points in the train set: 12344860, number of used features: 212
+1218.941 sec elapsed
+
+
+"Store:  | Dept: HOBBIES_1"
+[LightGBM] [Warning] Met categorical feature which contains sparse values. Consider renumbering to consecutive integers started from zero
+[LightGBM] [Info] Total Bins 27434
+[LightGBM] [Info] Number of data points in the train set: 5607509, number of used features: 212
+490.535 sec elapsed
+
+
+"Store:  | Dept: HOBBIES_2"
+[LightGBM] [Warning] Met categorical feature which contains sparse values. Consider renumbering to consecutive integers started from zero
+[LightGBM] [Info] Total Bins 22241
+[LightGBM] [Info] Number of data points in the train set: 1865656, number of used features: 212
+199.114 sec elapsed
+
+
+"Store:  | Dept: HOUSEHOLD_1"
+[LightGBM] [Warning] Met categorical feature which contains sparse values. Consider renumbering to consecutive integers started from zero
+[LightGBM] [Info] Total Bins 27341
+[LightGBM] [Info] Number of data points in the train set: 6697480, number of used features: 212
+655.27 sec elapsed
+
+
+"Store:  | Dept: HOUSEHOLD_2"
+[LightGBM] [Warning] Met categorical feature which contains sparse values. Consider renumbering to consecutive integers started from zero
+[LightGBM] [Info] Total Bins 24325
+[LightGBM] [Info] Number of data points in the train set: 7125749, number of used features: 212
+678.67 sec elapsed
+
+

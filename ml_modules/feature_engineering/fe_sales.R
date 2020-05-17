@@ -4,39 +4,40 @@
 #                                #
 ##################################
 
-## Source dependencies
-# source("ml_modules/create_data.R")
 
 # library(data.table)
 # library(RcppRoll)
 
-## Import data (melted sales )
+## Import data (melted sales)
 # dt <- create_dt(is_train = T, nrows = 10000, fh = 28, max_lags = 366, tr_last = 1913, fday = as.IDate("2016-04-25"))
 
 create_sales_features <- function(dt){
   
+  # Test
   # dt
   
-  ## Sales Features construction
+  ## // Sales Features construction //
+  
+  ## SOS
   
   
   ## 01. Sales lags ----
   print("Sales lag features...")
   
-  dt[, `:=`(lag_t1  = dplyr::lag(sales, 1),
-            lag_t2  = dplyr::lag(sales, 2),
-            lag_t3  = dplyr::lag(sales, 3),
-            lag_t4  = dplyr::lag(sales, 4),
-            lag_t5  = dplyr::lag(sales, 5),
-            lag_t6  = dplyr::lag(sales, 6),
-            lag_t7  = dplyr::lag(sales, 7),
-            lag_t8  = dplyr::lag(sales, 8),
-            lag_t14 = dplyr::lag(sales, 14),
-            lag_t21 = dplyr::lag(sales, 21),
-            lag_t28 = dplyr::lag(sales, 28),
-            lag_t35 = dplyr::lag(sales, 35),
-            lag_t42 = dplyr::lag(sales, 42),
-            lag_t49 = dplyr::lag(sales, 49)),
+  dt[order(d), `:=`(lag_t1  = dplyr::lag(sales, 1),
+                    lag_t2  = dplyr::lag(sales, 2),
+                    lag_t3  = dplyr::lag(sales, 3),
+                    lag_t4  = dplyr::lag(sales, 4),
+                    lag_t5  = dplyr::lag(sales, 5),
+                    lag_t6  = dplyr::lag(sales, 6),
+                    lag_t7  = dplyr::lag(sales, 7),
+                    lag_t8  = dplyr::lag(sales, 8),
+                    lag_t14 = dplyr::lag(sales, 14),
+                    lag_t21 = dplyr::lag(sales, 21),
+                    lag_t28 = dplyr::lag(sales, 28),
+                    lag_t35 = dplyr::lag(sales, 35),
+                    lag_t42 = dplyr::lag(sales, 42),
+                    lag_t49 = dplyr::lag(sales, 49)),
      by = "id"]
   
   gc()
@@ -46,11 +47,11 @@ create_sales_features <- function(dt){
   
   print("Sales rolling features...")
   
-  dt[ , `:=`(
+  dt[order(d), `:=`(
     
     # Last months means
     mean_last_month = (lag_t7 + lag_t14 + lag_t21 + lag_t28)/4,
-
+    
     mean_last_2_monts = (lag_t7 + lag_t14 + lag_t21 + lag_t28 + lag_t35 + lag_t42 + lag_t49)/7,
     
     mean_previous_month = (lag_t28 + lag_t35 + lag_t42 + lag_t49)/4,
@@ -79,7 +80,7 @@ create_sales_features <- function(dt){
     rolling_max_lag7_t7 = roll_maxr(lag_t7, 7),
     rolling_max_lag7_t30 = roll_maxr(lag_t7, 30),
     
-
+    
     # Rolling mean, sd, sum, min, max of lag28 (These feature vectors will not use predictions as ground truth values)
     
     rolling_mean_lag28_t7 = roll_meanr(lag_t28, 7),
@@ -105,39 +106,38 @@ create_sales_features <- function(dt){
   
   ## 03. Hierarhy sales features ----
 
+  dt[order(d),`:=`(lag_t7_total_sales = dplyr::lag(total_sales,7),
+                   lag_t7_total_state_sales = dplyr::lag(total_state_sales, 7),
+                   lag_t7_total_store_sales = dplyr::lag(total_store_sales, 7),
+                   lag_t7_total_cat_sales = dplyr::lag(total_cat_sales, 7),
+                   lag_t7_total_dept_sales = dplyr::lag(total_dept_sales, 7),
+                   lag_t7_total_state_cat_sales = dplyr::lag(total_state_cat_sales, 7),
+                   lag_t7_total_state_dept_sales = dplyr::lag(total_state_dept_sales, 7),
+                   lag_t7_total_store_cat_sales = dplyr::lag(total_store_cat_sales, 7),
+                   lag_t7_total_store_dept_sales = dplyr::lag(total_store_dept_sales, 7),
+                   lag_t7_total_item_sales = dplyr::lag(total_item_sales, 7),
+                   lag_t7_total_item_state_sales = dplyr::lag(total_item_state_sales, 7),
+                   
+                   lag_t28_total_sales = dplyr::lag(total_sales, 28),
+                   lag_t28_total_state_sales = dplyr::lag(total_state_sales, 28),
+                   lag_t28_total_store_sales = dplyr::lag(total_store_sales, 28),
+                   lag_t28_total_cat_sales = dplyr::lag(total_cat_sales, 28),
+                   lag_t28_total_dept_sales = dplyr::lag(total_dept_sales, 28),
+                   lag_t28_total_state_cat_sales = dplyr::lag(total_state_cat_sales, 28),
+                   lag_t28_total_state_dept_sales = dplyr::lag(total_state_dept_sales, 28),
+                   lag_t28_total_store_cat_sales = dplyr::lag(total_store_cat_sales, 28),
+                   lag_t28_total_store_dept_sales = dplyr::lag(total_store_dept_sales, 28),
+                   lag_t28_total_item_sales = dplyr::lag(total_item_sales, 28),
+                   lag_t28_total_item_state_sales = dplyr::lag(total_item_state_sales, 28)),
+     
+     by = "id"]
   
-  dt[ ,`:=`(lag_t7_total_sales = dplyr::lag(total_sales,7),
-            lag_t7_total_state_sales = dplyr::lag(total_state_sales, 7),
-            lag_t7_total_store_sales = dplyr::lag(total_store_sales, 7),
-            lag_t7_total_cat_sales = dplyr::lag(total_cat_sales, 7),
-            lag_t7_total_dept_sales = dplyr::lag(total_dept_sales, 7),
-            lag_t7_total_state_cat_sales = dplyr::lag(total_state_cat_sales, 7),
-            lag_t7_total_state_dept_sales = dplyr::lag(total_state_dept_sales, 7),
-            lag_t7_total_store_cat_sales = dplyr::lag(total_store_cat_sales, 7),
-            lag_t7_total_store_dept_sales = dplyr::lag(total_store_dept_sales, 7),
-            lag_t7_total_item_sales = dplyr::lag(total_item_sales, 7),
-            lag_t7_total_item_state_sales = dplyr::lag(total_item_state_sales, 7),
-            
-            lag_t28_total_sales = dplyr::lag(total_sales, 28),
-            lag_t28_total_state_sales = dplyr::lag(total_state_sales, 28),
-            lag_t28_total_store_sales = dplyr::lag(total_store_sales, 28),
-            lag_t28_total_cat_sales = dplyr::lag(total_cat_sales, 28),
-            lag_t28_total_dept_sales = dplyr::lag(total_dept_sales, 28),
-            lag_t28_total_state_cat_sales = dplyr::lag(total_state_cat_sales, 28),
-            lag_t28_total_state_dept_sales = dplyr::lag(total_state_dept_sales, 28),
-            lag_t28_total_store_cat_sales = dplyr::lag(total_store_cat_sales, 28),
-            lag_t28_total_store_dept_sales = dplyr::lag(total_store_dept_sales, 28),
-            lag_t28_total_item_sales = dplyr::lag(total_item_sales, 28),
-            lag_t28_total_item_state_sales = dplyr::lag(total_item_state_sales, 28)),
-      
-      by = "id"]
+  gc()
   
-  
-  
-  dt[ , `:=`(
+  dt[order(d), `:=`(
     
     # Last months means
-    meanl_last_total_sales = (lag_t7_total_sales + lag_t28_total_sales)/2,
+    mean_last_total_sales = (lag_t7_total_sales + lag_t28_total_sales)/2,
     mean_last_total_state_sales = (lag_t7_total_state_sales + lag_t28_total_state_sales)/2,
     mean_last_total_store_sales = (lag_t7_total_store_sales + lag_t28_total_store_sales)/2,
     mean_last_total_cat_sales = (lag_t7_total_cat_sales + lag_t28_total_cat_sales)/2,
@@ -164,7 +164,7 @@ create_sales_features <- function(dt){
     rolling_mean_lag_t28_total_item_sales = roll_meanr(lag_t28_total_item_sales, 28),
     rolling_mean_lag_t28_total_item_state_sales = roll_meanr(lag_t28_total_item_state_sales, 28)
     
-    ),  by = "id"]
+  ),  by = "id"]
   
   gc()
   
