@@ -12,6 +12,7 @@ library(RcppRoll)
 library(lightgbm)
 library(tictoc)
 
+devtools::install_github("AnotherSamWilson/ParBayesianOptimization")
 library(ParBayesianOptimization)
 
 fh = 28
@@ -38,13 +39,14 @@ gc()
 source("ml_modules/features.R")
 
 setdiff(features, colnames(tr))  # Errors
-setdiff(colnames(tr), features)  # Features to not include in model (ids, d, sales, total_sales)
+setdiff(colnames(tr), features)  # Features to not include in model (20 features)
+
 
 # Which of these features should be treaten as categorical
 categoricals
+setdiff(categoricals, features)      # Errors
 setdiff(categoricals, colnames(tr))  # Errors
 
-# setdiff(categoricals, which(sapply(tr, function(x){class(x)=="integer"})) %>% names())
 
 
 ## 04. Build multiple different models ----
@@ -54,16 +56,16 @@ stores <- unique(stat_total$store_id)
 departments <- unique(stat_total$dept_id)
 
 # Define the rights order in tr dataset (alphabetical order)
-stores <- c("CA_1", "CA_2", "CA_3", "CA_4", "TX_1", "TX_2", "TX_3", "WI_1", "WI_2", "WI_3")
-departments <- c("FOODS_1", "FOODS_2", "FOODS_3", "HOBBIES_1", "HOBBIES_2", "HOUSEHOLD_1", "HOUSEHOLD_2")
+# stores <- c("CA_1", "CA_2", "CA_3", "CA_4", "TX_1", "TX_2", "TX_3", "WI_1", "WI_2", "WI_3")
+# departments <- c("FOODS_1", "FOODS_2", "FOODS_3", "HOBBIES_1", "HOBBIES_2", "HOUSEHOLD_1", "HOUSEHOLD_2")
 
 
-# - A. One model per STORE (10 models) -
+## - A. One model per STORE (10 models) -
 # df <- expand.grid(stores, stringsAsFactors = F)
 # colnames(df) <- c("store_id")
 # df
 
-# - B. One model per DEPARTMENT (7 models) -
+## - B. One model per DEPARTMENT (7 models) -
 df <- expand.grid(departments, stringsAsFactors = F)
 colnames(df) <- c("dept_id")
 df
@@ -97,10 +99,10 @@ print(paste("Store:", store, "| Dept:", dept))
 
 ## - 1B. One model per DEPARTMENT (7 models) -
 # tr <- tr_full[dept_id == which(dept == departments),]
-tr <- tr[dept_id == which(dept == departments),]
+tr <- tr[dept_id == dept,]
 
 ## - 1C. One model per STORE - DEPARTMENT (70 models) -
-# tr <- tr_full[store_id == which(store == stores) & dept_id == which(dept == departments),]
+# tr <- tr_full[store_id == store & dept_id dept,]
 
 
 ## Deal with NAs
@@ -109,7 +111,7 @@ dim(tr)
 anyNA(tr)
 # sapply(tr, function(x){sum(is.na(x))})           # Check NAs in every column
 nrow(unique(tr[,j = c("item_id", "store_id")]))    # Total items (416)
-# tr <- tr[!is.na(rolling_mean_lag28_t180),]
+tr <- tr[!is.na(rolling_mean_lag28_t180),]
 
 
 
@@ -130,38 +132,21 @@ data_params <- list(
 
 # Validation data
 flag <- tr$d >= 1914 - 28
+sum(is.na(tr[flag, rolling_mean_lag28_t180])) # NAs in validation
+
 valid_data <- data.matrix(tr[flag, ..features])
-valid_data <- lgb.Dataset(data = valid_data, categorical_feature = categoricals, label = tr[["sales"]][flag], params = data_params, free_raw_data = F)
+valid_data <- lgb.Dataset(data = valid_data, categorical_feature = categoricals, label = tr[["sales"]][flag], params = data_params, free_raw_data = T)
+
+prepare_custom_evaluation_metric_dependencies()
 
 # Training data
-flag <- tr$d < 1914 - 28
+tr <- tr[!is.na(rolling_mean_lag28_t180),]  # Drop NA values   -  anyNA(tr)
+flag <- tr$d < 1914 - 28 
 y <- tr[["sales"]][flag]
 train_data <- data.matrix(tr[flag,..features,])
-train_data <- lgb.Dataset(data = train_data, categorical_feature = categoricals, label = y, params = data_params, free_raw_data = F)
+train_data <- lgb.Dataset(data = train_data, categorical_feature = categoricals, label = y, params = data_params, free_raw_data = T)
+gc()
 
-
-## Load datasets for WRMSSE caluclations
-
-# Load denominator for wrmsSe
-wrmsse_den <- read.csv("data/wrmsse_den_without_last_28.csv")
-
-# Load weights for Wrmsse
-weights <- read.csv("data/bts_weights.csv")
-
-# The validation data are:
-flag <- tr$d >= 1914 - 28
-item_group_frc <- tr[flag, c("store_id", "item_id")]
-item_group_frc
-item_group_frc %>% unique() %>% nrow()
-dim(item_group_frc)
-
-# Select the approprate store_ids - item_ids
-wrmsse_den <- merge(item_group_frc, wrmsse_den , by = c("store_id", "item_id"), all.x = T, sort = F)
-wrmsse_den[,c("store_id", "item_id")] %>% unique() %>% nrow()
-dim(wrmsse_den)
-weights <- merge(item_group_frc, weights , by = c("store_id", "item_id"), all.x = T, sort = F)
-weights[, c("store_id", "item_id")] %>% unique() %>% nrow()
-dim(weights)
 
 
 ## 06. Define the scoring function for the Bayesian optimization  -----
@@ -282,10 +267,10 @@ bounds <- list(
   bagging_freq = c(0L, 100L),
   feature_fraction = c(0.1, 1),
   feature_fraction_bynode = c(0.1, 1),
-  lambda_l1 = c(0, 2),
-  lambda_l2 = c(0, 2),
+  lambda_l1 = c(0.00, 2.00),
+  lambda_l2 = c(0.00, 2.00),
   # Objective parameters 
-  tweedie_variance_power = c(1, 1.99)
+  tweedie_variance_power = c(1.00, 1.99)
 )
 
 

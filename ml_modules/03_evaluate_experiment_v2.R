@@ -25,9 +25,8 @@ tr_last = 1913                     # Training last day
 fday = as.IDate("2016-04-25")      # Forecasting day (first day)
 
 
+
 ## 01. Load data  ----
-
-
 
 # 1. Load and merge datasets (96 features)
 
@@ -51,7 +50,7 @@ gc()
 # Be carefull here! 
 # These features must be calculated from all historic sales.
 dt <- add_categorical_encoding_features_test(dt)
-
+gc()
 
 # 4. Preprocessing steps and add more features (143 features)
 dt <- add_more_features(dt = dt)
@@ -62,11 +61,14 @@ dim(dt) # 12.834.328      143
 
 ##  // Sanity check //
 
+# Test data start from the first necessary day to compute lag features for test days
+# (28 + 180 days before the first test day)
+
 anyNA(dt)
 sapply(dt , function(x)sum(is.na(x))) %>% View() # only sales column (and total_sales)
 1707440/(28*2) # 30.490 item_id - store_id
 
-dt[item_id == "FOODS_3_111" & store_id == "CA_1", c("d", "sales", "Max", "Mean")] %>% View()
+dt[item_id == "FOODS_1_340" & store_id == "CA_1", c("d", "sales", "Max", "Mean")] %>% View()
 
 
 
@@ -98,21 +100,21 @@ df
 # Load features
 source("ml_modules/features.R")
 
-setdiff(features, colnames(dt))  # the sales lagging features ()
-setdiff(colnames(dt), features)  # Features to not include in model
+setdiff(features, colnames(dt))  # the sales lagging features (89 features)
+setdiff(colnames(dt), features)  # Features to not include in model (20 features)
 
 
 
 ## // Make forecastings //
 
-for (day in seq(from = tr_last + 1, to = tr_last + 1*fh, by = 1) ){ # 2*fh
+for (day in seq(from = tr_last + 1, to = tr_last + 2*fh, by = 1) ){ # 2*fh
 
   ## Test
   # day = 1914
   cat(as.character(day), "\n")
   
   
-  ## 1. Keep the neccessary data to compute lags for the forecasting day
+  ## 1. Keep a subset of the test data with with the neccessary data to compute lags for the specific forecasting day
   
   # Get a subset from dt (test dataset), with the last max_lags days
   # because these are the days required to create the lagging sales features.
@@ -120,28 +122,44 @@ for (day in seq(from = tr_last + 1, to = tr_last + 1*fh, by = 1) ){ # 2*fh
   tst <- dt[d >= day - max_lags & d <= day]
   
   
-  ## 2. Create Sales features (232 features, 11.157.378)
+  ## 2. Create Sales features - lags (232 features)
   tst <- create_sales_features(tst)
   gc()
   
   
-  ## 3. NA-imputations
+  ## 3. Sanity check of feature vectors for the specific test day - NA-imputations
   
-  # Some items  don't have the necessary historical sales values, to calculate large window features, such as rolling_mean_lag28_t180.
-  # Solution: I will use the first available smaller-window appropriate lag value:
-  # eg. lag_t180 <- lag_t120 
+  
+  # tst[d==day, ] %>% nrow()         # 30490 (all item_id, store_id)
+  # anyNA(tst[d==day, ..features])   # TRUE
   
   # tst[item_id == "FOODS_1_001" & store_id == "CA_1", c("d", "sales", "lag_t1", "lag_t2", "lag_t7", "rolling_mean_lag28_t180")] %>% View()
-  # tst[d==1914, c("id", "rolling_mean_lag28_t180", "rolling_mean_lag28_t120", "rolling_mean_lag28_t90", "rolling_mean_lag28_t60", "rolling_mean_lag28_t30")] %>% View("tst")
-  # tst[d==1914 & item_id == "HOUSEHOLD_2_342", c("id", "rolling_mean_lag28_t180","rolling_mean_lag28_t120")]
   
-  # Tests with NAs (check them before and after)
+  
+  # // PROBLEM //
+  # Some items  don't have the necessary historical sales values, to calculate large window features, such as rolling_mean_lag28_t180.
+  # SOLUTION  : I will use the first available smaller-window lag feature.
+  # eg. lag_t180 <- lag_t120 
+  
+  # sapply(tst[d==day, ..features], function(x)sum(is.na(x))) %>% View()  
+  # 8 features with NAs
+  # sapply(tst[d==day,], function(x)sum(is.na(x))) %>% View() 
+  
+  ## Sort and check at the last rows how many NAs features exists
+  
+  # tst[d==1914, c("id", "rolling_mean_lag28_t180", "rolling_mean_lag28_t120", "rolling_mean_lag28_t90", "rolling_mean_lag28_t60", "rolling_mean_lag28_t30")] %>% View("tst")
+  # tst[d==1914, c("id",  "rolling_mean_lag1_t120")] %>% View("tst")
+  
+  
+  ## Tests with NAs (check them before and after)
+  
+  # tst[d==1914 & item_id == "HOUSEHOLD_2_342", c("id", "rolling_mean_lag28_t180","rolling_mean_lag28_t120")]
   # tst[d==1914 & item_id == "HOUSEHOLD_2_342" & store_id == "CA_4", c("id", "rolling_mean_lag28_t180","rolling_mean_lag28_t120")]
   # tst[d==1914 & item_id == "HOUSEHOLD_1_183" & store_id == "CA_4", c("id", "rolling_mean_lag28_t180","rolling_mean_lag28_t120", "rolling_mean_lag28_t60")]
-  # tst[d==1914 & item_id == "HOUSEHOLD_1_512" & store_id == "CA_3", c("id", "rolling_mean_lag28_t180","rolling_mean_lag28_t120", "rolling_mean_lag28_t60", "rolling_mean_lag28_t30")]
-  
-  
-  # sapply(tst[d==day, ..features], function(x)sum(is.na(x))) %>% View()
+  # tst[d==1914 & item_id == "HOUSEHOLD_1_512" & store_id == "CA_3", c("id", "rolling_mean_lag28_t180","rolling_mean_lag28_t120", "rolling_mean_lag28_t90", "rolling_mean_lag28_t60", "rolling_mean_lag28_t30")]
+  # tst[d==1914 & item_id == "FOODS_3_595" & store_id == "CA_3", c("id", "rolling_mean_lag28_t180","rolling_mean_lag28_t120",  "rolling_mean_lag28_t60", "rolling_mean_lag28_t30")]
+  # tst[d==1914 & item_id == "FOODS_3_296" & store_id == "CA_1", c("id", "rolling_mean_lag1_t120","rolling_mean_lag1_t7",  "rolling_mean_lag28_t60")]
+
 
   
   tst[d==day & is.na(rolling_mean_lag28_t60), rolling_mean_lag28_t60 := rolling_mean_lag28_t30
@@ -150,18 +168,22 @@ for (day in seq(from = tr_last + 1, to = tr_last + 1*fh, by = 1) ){ # 2*fh
           ][d==day & is.na(rolling_mean_lag7_t90), rolling_mean_lag7_t90 := rolling_mean_lag7_t60
             ][d==day & is.na(rolling_mean_lag28_t120), rolling_mean_lag28_t120 := rolling_mean_lag28_t90
               ][d==day & is.na(rolling_mean_lag7_t120), rolling_mean_lag7_t120 := rolling_mean_lag7_t90
-                ][d==day & is.na(rolling_mean_lag28_t180), rolling_mean_lag28_t180 := rolling_mean_lag28_t120  # OR (rolling_mean_lag28_t120 + rolling_mean_lag28_t90 + rolling_mean_lag28_t60)/3
-                  ][d==day & is.na(rolling_mean_lag7_t180), rolling_mean_lag7_t180 := rolling_mean_lag7_t120]
+                ][d==day & is.na(rolling_mean_lag1_t120), rolling_mean_lag1_t120 := (rolling_mean_lag1_t7 + rolling_mean_lag28_t60 + rolling_mean_lag28_t30)/3
+                  ][d==day & is.na(rolling_mean_lag28_t180), rolling_mean_lag28_t180 := rolling_mean_lag28_t120  # OR (rolling_mean_lag28_t120 + rolling_mean_lag28_t90 + rolling_mean_lag28_t60)/3
+                    ][d==day & is.na(rolling_mean_lag7_t180), rolling_mean_lag7_t180 := rolling_mean_lag7_t120]
   
   
-  # 4. Make forecastings 
+  # anyNA(tst[d==day,..features])
+  
+  
+  # 4. Make forecastings for the specific day, using different model for each department
   
   for (i in 1:nrow(df)){
     
     # Test
     # i=1
     
-    # store <- df[i,"store_id"]
+    store <- df[i,"store_id"]
     dept <- df[i,"dept_id"]
     print(paste("Store:", store, "| Dept:", dept))
     
@@ -173,36 +195,46 @@ for (day in seq(from = tr_last + 1, to = tr_last + 1*fh, by = 1) ){ # 2*fh
     # (select only used features) 
     tst_day_dept <- data.matrix(tst[d == day & dept_id == dept, ..features])
     
-    # Note: Some big lags may be NA for some products,
-    # because these products may not be available during all this period of time.
-    # sapply(as.data.frame(tst), function(x)sum(is.na(x))) %>% View()
+    # anyNA(tst_day_dept)
     
     
-    ## Make predictions and save them in te (test) dataset. 
+    ## Make predictions and save them directly in dt (test dataset) in dedicated sales column
     
     # Predictions processing steps: 
-    # 1. float predictions
+    # 1. predictions as it is (float)
     # 2. round predictions
     # 3. floor predictions
+    # 4. ceil predictions
     
-    dt[d == day & dept_id == dept, sales := predict(lgb_model, tst_day_dept)] 
+    dt[d == day & dept_id == dept, sales := round(predict(lgb_model, tst_day_dept))] 
     
+    # dt[d == day & dept_id == dept, ] %>% nrow()
+    # dt[d==day & dept_id == dept,list(id, item_id, dept_id, cat_id, store_id, state_id,d) ]
+    # tst[d == day & dept_id == dept,list(id, item_id, dept_id, cat_id, store_id, state_id,d) ]
     
     ## Sanity check predictions
-    # dim(tst_day_dept)     # products * 1 day
-    # temp_df <- data.frame(tst_day_dept[,c("Max","Mean", "mean_last_month",  "lag_t28", "lag_t21" ,"lag_t14", "lag_t8", "lag_t7", "lag_t6","lag_t5","lag_t4","lag_t3","lag_t2","lag_t1")])
+    
+    # dim(tst_day_dept)     # products of dept * 1 day
+    # temp_df <- data.frame(tst_day_dept[,c("Max","Mean", "mean_last_month", "rolling_mean_lag28_t180", "lag_t28", "lag_t21" ,"lag_t14", "lag_t8", "lag_t7", "lag_t6","lag_t5","lag_t4","lag_t3","lag_t2","lag_t1")])
     # temp_df$preds <- predict(lgb_model, tst_day_dept)
     # View(temp_df)
     
-    
-    # Iteration: Use again the dt (test set) dataset to subset the last max_lags days, to create features and make new predictions.
-    
-    
-    
+    gc()
     }
   
+  
+  # // Next Iteration: next day //
+  # Use again the dt (test dataset) to:
+  # 1. subset the last max_lags days,
+  # 2. create saels lagging features 
+  # 3. make predictions 
+  
+  gc()
 }
 
+# Temp Save predictions
+temp <- dt
+gc()
 
 ## Check model importances
 
@@ -223,13 +255,31 @@ for (day in seq(from = tr_last + 1, to = tr_last + 1*fh, by = 1) ){ # 2*fh
 
 sample_submission <- fread("data/pnt_submissions/sample_submission.csv")
 
-te[date >= fday
-   ][date >= fday+fh, id := sub("validation", "evaluation", id)
-     ][,d := as.character(d)
-       ][, d := paste0("F", 1:28), by = id
-         ][, dcast(.SD, id ~ d, value.var = "sales")
-           ][sample_submission[,.(id)], on = "id"
-             ][, j = c("id", paste0("F", 1:28))
-               ][, fwrite(.SD, "data/pnt_submissions/sub_dt_lgb_v0_1.01.csv")]
+day = 1914
+
+
+submission_file <- dt[d >= day, list(id, d, sales)
+                      ][d >= day+fh, id := sub("validation", "evaluation", id)
+                            ][, dcast(.SD, id ~ d, value.var = "sales")
+                              ][sample_submission[,.(id)], on = "id"
+                                ][, j = c("id", paste0("F", 1:28))]
+
+
+dt[d>day & id == "HOBBIES_1_001_CA_1_validation", ] %>% View()
+submission_file <- dt[d >= day, list(id, d, sales)
+                      ][d >= day+fh, id := sub("validation", "evaluation", id)
+                        ][,d := as.character(d)
+                          ][, d := paste0("F", 1:28), by = id
+                            ][, dcast(.SD, id ~ d, value.var = "sales")
+                              ][sample_submission[,.(id)], on = "id"
+                                ][, j = c("id", paste0("F", 1:28))]
+
+
+
+# For the test days (If I don't have any predictions)
+# submission_file[is.na(submission_file)] <- 0
+
+dim(submission_file)
+write.csv(x = submission_file, file = "lgbm_v0.csv", row.names = F)
 
 

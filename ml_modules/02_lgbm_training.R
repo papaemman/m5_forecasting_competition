@@ -9,7 +9,6 @@
 
 library(tidyverse)
 library(data.table)
-library(RcppRoll)
 library(lightgbm)
 library(tictoc)
 
@@ -27,6 +26,7 @@ tables()
 class(tr)
 gc()
 
+colnames(tr)
 tr[1:3, 1:10]
 dim(tr)
 str(tr)
@@ -47,7 +47,7 @@ gc()
 source("ml_modules/features.R")
 
 setdiff(features, colnames(tr))  # Errors
-setdiff(colnames(tr), features)  # Features to not include in model
+setdiff(colnames(tr), features)  # Features to not include in model (20 features)
 
 
 # Which of these features should be treaten as categorical
@@ -99,7 +99,7 @@ tr_full = tr
 for (i in 1:nrow(df)){
   
   # Test
-  # i=7
+  # i=1
   
   # Print data subsets
   store <- df[i,"store_id"]

@@ -62,6 +62,31 @@ Best rmse score   : 1.84957 at 401 iteration
 Best wrmsse score : 0.15040 at 451 iteration
 
 
+[LightGBM] [Info] Total Bins 21912
+[LightGBM] [Info] Number of data points in the train set: 6980480, number of used features: 138
+Best rmse score: 1.847319 at 269 iteration
+Best wrmsse score: 0.1490998 at 651 iteration
+
+
+[LightGBM] [Info] Total Bins 14088
+[LightGBM] [Info] Number of data points in the train set: 6980480, number of used features: 60
+Best rmse score: 1.846374 at 327 iteration
+Best wrmsse score: 0.1490414 at 712 iteration
+
+
+[LightGBM] [Info] Total Bins 14063
+[LightGBM] [Info] Number of data points in the train set: 5952803, number of used features: 60
+Best rmse score: 1.846035 at 282 iteration
+Best wrmsse score: 0.1463934 at 581 iteration
+
+
+[LightGBM] [Info] Total Bins 15993
+[LightGBM] [Info] Number of data points in the train set: 5952803, number of used features: 75
+Best rmse score: 1.842169 at 286 iteration
+Best wrmsse score: 0.1466377 at 69 iteration
+
+
+
 -> HOBBIES_2
 
 

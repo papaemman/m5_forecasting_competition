@@ -5,7 +5,7 @@
 ##################################
 
 # Note: Features from calendar and Features from prices are already created and saved.
-#       Check scirpts in ml_modules/feature_engineering/fe_calandar - fe_prices
+#       Check scirpts in ml_modules/feature_engineering/fe_calandar - fe_prices to see how they are created.
 
 
 ## 00. Load packages ----
@@ -36,28 +36,27 @@ fday = as.IDate("2016-04-25")      # Forecasting day (first day)
 #                 fh = fh, max_lags = max_lags, tr_last = tr_last, fday = fday,
 #                 filter_params = "dept_id == 'HOBBIES_1' ")
 
-# 1. Load and merge datasets (96 features)
+# 1. Load and merge datasets (96 features | 46.027.957 rows)
 dt <- create_dt(is_train = TRUE, nrows = nrows,
                 fh = fh, max_lags = max_lags, tr_last = tr_last, fday = fday,
                 filter_params = NA)
 gc()
 
 
-# 2. Create hierarhy sales features (107 features)
+# 2. Create hierarhy sales features (107 features | 46.027.957 rows)
 dt <- create_hierarhy_sales_features(dt)
 gc()
 
-
-# 3. Add categorical encoding features (129 features)
-dt <- create_categorical_encoding_features(dt)
-
-
-# 4. Preprocessing steps and add more features (143 features)
+# 3. Preprocessing steps and add more features (143 features)
 dt <- add_more_features(dt = dt)
 gc()
 
 
-# 5. Create Sales features (232 features, 46.027.957 rows)
+# 4. Add categorical encoding features (181 features | 46.027.957 rows)
+dt <- create_categorical_encoding_features(dt)
+
+
+# 5. Create Sales features (232 features, 46.027.957 rows) 245
 dt <- create_sales_features(dt)
 gc()
 

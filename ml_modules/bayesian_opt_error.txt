@@ -1,0 +1,12 @@
+Running initial scoring function 12 times in 1 thread(s)...  10541.74 seconds
+   learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1
+1:    0.24096724      50825      6986               71        0.6270482           76        0.6553722               0.6804317 1.2035623
+2:    0.06966031      34949        88               14        0.3707323           53        0.8609404               0.7976356 0.9928971
+   lambda_l2 tweedie_variance_power
+1: 0.4323502               1.902308
+2: 0.7657081               1.965962
+                                                                                                                                                                        errorMessage
+1:  [LightGBM] [Fatal] Check failed: (best_split_info.left_count) > (0) at /tmp/Rtmp6VNf7S/R.INSTALL9316e760fee/lightgbm/src/src/treelearner/serial_tree_learner.cpp, line 622 .\n\n
+2: [LightGBM] [Fatal] Check failed: (best_split_info.right_count) > (0) at /tmp/Rtmp6VNf7S/R.INSTALL9316e760fee/lightgbm/src/src/treelearner/serial_tree_learner.cpp, line 632 .\n\n
+Error in bayesOpt(FUN = scoringFunction, bounds = bounds, saveFile = NULL,  : 
+  Errors encountered in initialization are listed above.

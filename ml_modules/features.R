@@ -62,7 +62,8 @@ features <- c(
   # "total_state_cat_sales", "total_state_dept_sales", "total_store_cat_sales", "total_store_dept_sales",   
   # "total_item_sales", "total_item_state_sales",
   
-  "snap",
+  # 
+  # "snap",
   
   "lngth", "ADI", "CV2", "pz", "Low25", "Mean", "Median", "Up25", "Max", "dollar_sales",
   
@@ -119,7 +120,12 @@ features <- c(
   "enc_dept_mean", "enc_dept_sd", "enc_state_cat_mean", "enc_state_cat_sd", "enc_state_dept_mean", "enc_state_dept_sd",     
   "enc_store_cat_mean", "enc_store_cat_sd", "enc_store_dept_mean", "enc_store_dept_sd", 
   "enc_item_mean", "enc_item_sd", "enc_item_max",
-  "enc_item_state_mean", "enc_item_state_sd", "enc_item_state_max"    
+  "enc_item_state_mean", "enc_item_state_sd", "enc_item_state_max",   
+  
+  "CA_state", "TX_state", "WI_state",
+  "CA_1_stores", "CA_2_stores", "CA_3_stores", "CA_4_stores",
+  "TX_1_stores", "TX_2_stores", "TX_3_stores",
+  "WI_1_stores", "WI_2_stores", "WI_3_stores"
   
   # "orig", "rleLength" 
   
@@ -150,7 +156,7 @@ categoricals <- c(
   
   "best_price",
   
-  "snap",
+  # "snap",
   
   # "Type", 
   "type_1", "type_2", "type_3", "type_4"
@@ -158,3 +164,107 @@ categoricals <- c(
   # "Low25", "Mean", "Median", "Up25", "Max"
   
 )
+
+
+
+## WITHOUT CALENDAR / PRICES
+
+
+
+## NO CALENDAR - PRICE  ----
+
+function(){
+  
+  features<- c(
+    
+    # "id",
+    
+    # "item_id",  "dept_id", "cat_id",
+    
+    # "store_id", "state_id", 
+    
+    # "d", 
+    
+    # "sales",
+    
+    
+    "lngth", "ADI", "CV2", "pz", "Low25", "Mean", "Median", "Up25", "Max", "dollar_sales",
+    
+    # "Type",
+    "type_1", "type_2", "type_3", "type_4",
+    
+    
+    "lag_t1", "lag_t2", "lag_t3", "lag_t4", "lag_t5", "lag_t6", "lag_t7", "lag_t8",
+    "lag_t14", "lag_t21", "lag_t28", "lag_t35", "lag_t42", "lag_t49",
+    
+    "mean_last_month", "mean_last_2_monts", "mean_previous_month",
+    
+    "rolling_mean_lag1_t7", "rolling_mean_lag1_t120",
+    
+    "rolling_mean_lag7_t7", "rolling_mean_lag7_t30", "rolling_mean_lag7_t60" ,
+    "rolling_mean_lag7_t90", "rolling_mean_lag7_t120", "rolling_mean_lag7_t180", 
+    
+    "rolling_sd_lag7_t7", "rolling_sd_lag7_t30", 
+    "rolling_sum_lag7_t7","rolling_min_lag7_t7",
+    
+    "rolling_min_lag7_t30", "rolling_max_lag7_t7",
+    
+    "rolling_max_lag7_t30", "rolling_mean_lag28_t7",
+    
+    "rolling_mean_lag28_t30", "rolling_mean_lag28_t60", "rolling_mean_lag28_t90", "rolling_mean_lag28_t120", "rolling_mean_lag28_t180" ,   
+    "rolling_sd_lag28_t7", "rolling_sd_lag28_t30", 
+    "rolling_sum_lag28_t7", 
+    
+    "rolling_min_lag28_t7", "rolling_min_lag28_t30",
+    "rolling_max_lag28_t7", "rolling_max_lag28_t30",
+    
+    "lag_t7_total_sales", "lag_t7_total_state_sales", "lag_t7_total_store_sales",                  
+    "lag_t7_total_cat_sales", "lag_t7_total_dept_sales", "lag_t7_total_state_cat_sales",               
+    "lag_t7_total_state_dept_sales", "lag_t7_total_store_cat_sales", "lag_t7_total_store_dept_sales",              
+    "lag_t7_total_item_sales", "lag_t7_total_item_state_sales",
+    
+    "lag_t28_total_sales", "lag_t28_total_state_sales", "lag_t28_total_store_sales", "lag_t28_total_cat_sales",                    
+    "lag_t28_total_dept_sales", "lag_t28_total_state_cat_sales", "lag_t28_total_state_dept_sales",             
+    "lag_t28_total_store_cat_sales", "lag_t28_total_store_dept_sales", "lag_t28_total_item_sales" ,                  
+    "lag_t28_total_item_state_sales",
+    
+    "mean_last_total_sales", "mean_last_total_state_sales", "mean_last_total_store_sales",
+    "mean_last_total_cat_sales", "mean_last_total_dept_sales","mean_last_total_state_cat_sales",
+    "mean_last_total_state_dept_sales","mean_last_total_store_cat_sales",            
+    "mean_last_total_store_dept_sales", "mean_last_total_item_sales", "mean_last_total_item_state_sales",           
+    
+    "rolling_mean_lag_t28_total_sales", "rolling_mean_lag_t28_total_state_sales", "rolling_mean_lag_t28_total_store_sales",     
+    "rolling_mean_lag_t28_total_cat_sales", "rolling_mean_lag_t28_total_dept_sales", "rolling_mean_lag_t28_total_state_cat_sales", 
+    "rolling_mean_lag_t28_total_state_dept_sales" ,"rolling_mean_lag_t28_total_store_cat_sales", "rolling_mean_lag_t28_total_store_dept_sales",
+    "rolling_mean_lag_t28_total_item_sales", "rolling_mean_lag_t28_total_item_state_sales",
+    
+    
+    "enc_state_mean", "enc_state_sd", "enc_store_mean", "enc_store_sd", "enc_cat_mean", "enc_cat_sd",           
+    "enc_dept_mean", "enc_dept_sd", "enc_state_cat_mean", "enc_state_cat_sd", "enc_state_dept_mean", "enc_state_dept_sd",     
+    "enc_store_cat_mean", "enc_store_cat_sd", "enc_store_dept_mean", "enc_store_dept_sd", 
+    "enc_item_mean", "enc_item_sd", "enc_item_max",
+    "enc_item_state_mean", "enc_item_state_sd", "enc_item_state_max",
+    
+    "CA_state", "TX_state", "WI_state",
+    "CA_1_stores", "CA_2_stores", "CA_3_stores", "CA_4_stores",
+    "TX_1_stores", "TX_2_stores", "TX_3_stores",
+    "WI_1_stores", "WI_2_stores", "WI_3_stores"
+    # "orig", "rleLength" 
+    
+  )
+  
+  
+  # Categoricals ----
+  
+  categoricals <- c(
+    
+    # "store_id", "state_id",
+    
+    # "Type", 
+    "type_1", "type_2", "type_3", "type_4"
+    
+    # "Low25", "Mean", "Median", "Up25", "Max"
+    
+  )
+  
+}

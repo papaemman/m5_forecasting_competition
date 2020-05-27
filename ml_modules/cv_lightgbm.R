@@ -88,10 +88,18 @@ df
 # dim(df)
 # head(df)
 
+# Calendar
+tr <- temp
+calendar <- readRDS("data/raw/calendar_full.rds")
+prices <- readRDS("data/raw/prices_full.rds")
+tr <- tr[calendar, on = "d", nomatch = 0]
+tr <- tr[prices, on = c("store_id", "item_id", "wm_yr_wk"), nomatch = 0]
+
+
 ## 06. Training ----
 
 # Save full training data
-tr_full = tr
+# tr_full = tr
 
 
 for (i in 1:nrow(df)){
@@ -119,6 +127,13 @@ for (i in 1:nrow(df)){
   ## - 1C. One model per STORE - DEPARTMENT (70 models) -
   # tr <- tr_full[store_id == which(store == stores) & dept_id == which(dept == departments),]
   
+  ## Merge calendar, price data
+  tr <- tr[calendar, on = "d", nomatch = 0]
+  tr <- tr[prices, on = c("store_id", "item_id", "wm_yr_wk"), nomatch = 0]
+  
+  rm(calendar)
+  rm(prices)
+  dim(tr)
   
   ## Deal with NAs
   
@@ -288,6 +303,9 @@ for (i in 1:nrow(df)){
   # lgb.plot.importance(imp, 20, cex = 0.9) 
   # write.csv(imp, file = "ml_modules/imp/importnaces_CA.csv", row.names = F)
   
+  ## Keep top 60 features
+  features <- imp$Feature[1:75]
+  categoricals <- c()
 }
 
 
