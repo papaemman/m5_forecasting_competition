@@ -1,0 +1,160 @@
+Running initial scoring function 12 times in 1 thread(s)...  277.948 seconds
+
+Starting Epoch 1 
+  1) Fitting Gaussian Process...
+  2) Running local optimum search...        850.315 seconds
+  3) Running FUN 1 times in 1 thread(s)...  16.935 seconds
+
+Results from most recent parameter scoring:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1  lambda_l2
+     0.5386881       1579      6000               90        0.8956972            0         0.601883                       1         2 0.04435327
+ tweedie_variance_power gpUtility acqOptimum Elapsed        Score nrounds_wrmsse     rmse nrounds_rmse errorMessage
+                      1 0.4862293       TRUE  16.182 -0.001703568             23 1.446096           25           NA
+
+Maximum score was not raised this round. Best score is still:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1 lambda_l2 tweedie_variance_power
+    0.09530871        659      4783               66         0.993697           85        0.4314774               0.9504699  1.398479  1.582054               1.583055
+         Score
+ -0.0003377605
+
+Starting Epoch 2 
+  1) Fitting Gaussian Process...
+  2) Running local optimum search...        1050.619 seconds
+  3) Running FUN 1 times in 1 thread(s)...  12.159 seconds
+
+Results from most recent parameter scoring:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1 lambda_l2 tweedie_variance_power
+      0.333257      10000         1               48                1           23              0.1                       1  1.337918  1.013673                   1.99
+ gpUtility acqOptimum Elapsed         Score nrounds_wrmsse      rmse nrounds_rmse errorMessage
+ 0.4658253       TRUE  11.406 -0.0002389889            997 0.1636243          981           NA
+
+New best parameter set found:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1 lambda_l2 tweedie_variance_power
+      0.333257      10000         1               48                1           23              0.1                       1  1.337918  1.013673                   1.99
+         Score
+ -0.0002389889
+
+Starting Epoch 3 
+  1) Fitting Gaussian Process...
+  2) Running local optimum search...        862.801 seconds
+  3) Running FUN 1 times in 1 thread(s)...  33.814 seconds
+
+Results from most recent parameter scoring:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1 lambda_l2 tweedie_variance_power
+     0.2863284       6324      4727               68                1           38        0.3012518                       1         2  1.490365               1.290465
+ gpUtility acqOptimum Elapsed        Score nrounds_wrmsse      rmse nrounds_rmse errorMessage
+ 0.4471372       TRUE  33.057 -0.001325433            995 0.6348915          981           NA
+
+Maximum score was not raised this round. Best score is still:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1 lambda_l2 tweedie_variance_power
+      0.333257      10000         1               48                1           23              0.1                       1  1.337918  1.013673                   1.99
+         Score
+ -0.0002389889
+
+Starting Epoch 4 
+  1) Fitting Gaussian Process...
+  2) Running local optimum search...        1214.786 seconds
+  3) Running FUN 1 times in 1 thread(s)...  11.487 seconds
+
+Results from most recent parameter scoring:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1 lambda_l2 tweedie_variance_power
+      0.123816      10000         1               58        0.2961648           13              0.1                     0.1         0 0.8992838                   1.99
+ gpUtility acqOptimum Elapsed        Score nrounds_wrmsse      rmse nrounds_rmse errorMessage
+ 0.4068294       TRUE  10.737 -0.001257105           1000 0.9748694          999           NA
+
+Maximum score was not raised this round. Best score is still:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1 lambda_l2 tweedie_variance_power
+      0.333257      10000         1               48                1           23              0.1                       1  1.337918  1.013673                   1.99
+         Score
+ -0.0002389889
+
+Starting Epoch 5 
+  1) Fitting Gaussian Process...
+  2) Running local optimum search...        1239.942 seconds
+  3) Running FUN 1 times in 1 thread(s)...  11.792 seconds
+
+Results from most recent parameter scoring:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1 lambda_l2 tweedie_variance_power
+      0.413982       1924         1                5        0.7822622           22              0.1                     0.1         0 0.9161666                   1.99
+ gpUtility acqOptimum Elapsed         Score nrounds_wrmsse      rmse nrounds_rmse errorMessage
+ 0.4132192       TRUE   11.02 -0.0008639795            631 0.7648009          631           NA
+
+Maximum score was not raised this round. Best score is still:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1 lambda_l2 tweedie_variance_power
+      0.333257      10000         1               48                1           23              0.1                       1  1.337918  1.013673                   1.99
+         Score
+ -0.0002389889
+
+Starting Epoch 6 
+  1) Fitting Gaussian Process...
+  2) Running local optimum search...        793.467 seconds
+  3) Running FUN 1 times in 1 thread(s)...  8.806 seconds
+
+Results from most recent parameter scoring:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1 lambda_l2 tweedie_variance_power
+     0.4682785      10000      6000                5                1          100              0.1                       1         2         0                   1.99
+ gpUtility acqOptimum Elapsed        Score nrounds_wrmsse      rmse nrounds_rmse errorMessage
+ 0.3883409       TRUE   8.042 -0.001741272            187 0.9580926          182           NA
+
+Maximum score was not raised this round. Best score is still:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1 lambda_l2 tweedie_variance_power
+      0.333257      10000         1               48                1           23              0.1                       1  1.337918  1.013673                   1.99
+         Score
+ -0.0002389889
+
+Starting Epoch 7 
+  1) Fitting Gaussian Process...
+  2) Running local optimum search...        1189.304 seconds
+  3) Running FUN 1 times in 1 thread(s)...  15.071 seconds
+
+Results from most recent parameter scoring:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1 lambda_l2 tweedie_variance_power
+           0.6       8849      1765               81                1           38        0.4384818                       1         2 0.8483519               1.932706
+ gpUtility acqOptimum Elapsed        Score nrounds_wrmsse      rmse nrounds_rmse errorMessage
+ 0.3936197       TRUE  14.314 -0.001652364             95 0.6976662           79           NA
+
+Maximum score was not raised this round. Best score is still:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1 lambda_l2 tweedie_variance_power
+      0.333257      10000         1               48                1           23              0.1                       1  1.337918  1.013673                   1.99
+         Score
+ -0.0002389889
+
+Starting Epoch 8 
+  1) Fitting Gaussian Process...
+  2) Running local optimum search...        870.596 seconds
+  3) Running FUN 1 times in 1 thread(s)...  13.991 seconds
+
+Results from most recent parameter scoring:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1 lambda_l2 tweedie_variance_power
+     0.3776605      10000         1               52                1            0                1               0.6648148 0.9971716  1.137334               1.653505
+ gpUtility acqOptimum Elapsed         Score nrounds_wrmsse       rmse nrounds_rmse errorMessage
+ 0.4559589       TRUE  13.218 -3.406403e-05            996 0.04105419          996           NA
+
+New best parameter set found:
+ learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1 lambda_l2 tweedie_variance_power
+     0.3776605      10000         1               52                1            0                1               0.6648148 0.9971716  1.137334               1.653505
+         Score
+ -3.406403e-05
+ 
+ 
+ 
+==================================================================================================================
+
+// Old errors //
+
+
+
+
+
+Running initial scoring function 12 times in 1 thread(s)...  10541.74 seconds
+   learning_rate num_leaves max_depth min_data_in_leaf bagging_fraction bagging_freq feature_fraction feature_fraction_bynode lambda_l1
+1:    0.24096724      50825      6986               71        0.6270482           76        0.6553722               0.6804317 1.2035623
+2:    0.06966031      34949        88               14        0.3707323           53        0.8609404               0.7976356 0.9928971
+   lambda_l2 tweedie_variance_power
+1: 0.4323502               1.902308
+2: 0.7657081               1.965962
+                                                                                                                                                                        errorMessage
+1:  [LightGBM] [Fatal] Check failed: (best_split_info.left_count) > (0) at /tmp/Rtmp6VNf7S/R.INSTALL9316e760fee/lightgbm/src/src/treelearner/serial_tree_learner.cpp, line 622 .\n\n
+2: [LightGBM] [Fatal] Check failed: (best_split_info.right_count) > (0) at /tmp/Rtmp6VNf7S/R.INSTALL9316e760fee/lightgbm/src/src/treelearner/serial_tree_learner.cpp, line 632 .\n\n
+Error in bayesOpt(FUN = scoringFunction, bounds = bounds, saveFile = NULL,  : 
+  Errors encountered in initialization are listed above.
