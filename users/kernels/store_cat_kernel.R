@@ -28,7 +28,7 @@ free <- function() invisible(gc())
 
 create_dt <- function(store,cat) {
   #read data
-  dt=fread("../input/m5-forecasting-accuracy/sales_train_validation.csv")
+  dt=fread("data/raw/sales_train_validation.csv")
   
   #which store and category
   dt=dt[store_id==store & cat_id==cat]
@@ -41,7 +41,7 @@ create_dt <- function(store,cat) {
              variable.name = "d",
              value.name = "Qty")
   #read calendar data
-  cal <- fread("../input/m5-forecasting-accuracy/calendar.csv")
+  cal <- fread("data/raw/calendar.csv")
   #merge
   dt <- dt[cal, `:=`(date = as.IDate(i.date, format="%Y-%m-%d"),
                      wm_yr_wk = i.wm_yr_wk,
@@ -55,7 +55,7 @@ create_dt <- function(store,cat) {
                      snap_TX = i.snap_TX,
                      snap_WI = i.snap_WI), on = "d"]
   #Read price data
-  prices <- fread("../input/m5-forecasting-accuracy/sell_prices.csv")
+  prices <- fread("data/raw/sell_prices.csv")
   
   #Merge price
   dt[prices,`:=`(sell_price=i.sell_price),on=c("store_id","item_id","wm_yr_wk")]
@@ -65,6 +65,7 @@ create_dt <- function(store,cat) {
   dt[is.na(sell_price) & date>=fday_max_lag,sell_price:=0,by=item_id]
   dt[!is.na(sell_price)]
 }
+
 
 create_fea <- function(dt) {
   #Create FE

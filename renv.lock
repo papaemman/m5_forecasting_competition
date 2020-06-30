@@ -95,15 +95,10 @@
     },
     "ParBayesianOptimization": {
       "Package": "ParBayesianOptimization",
-      "Version": "1.2.0",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "ParBayesianOptimization",
-      "RemoteUsername": "AnotherSamWilson",
-      "RemoteRef": "master",
-      "RemoteSha": "c45a1f52fa436b4a05485efce1f6467727f2ba72",
-      "Hash": "ba78258e051d6ca929c0f96cdae4f346"
+      "Version": "1.1.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "64ef75cd5f3add6b7ca56d833a6f1af6"
     },
     "PerformanceAnalytics": {
       "Package": "PerformanceAnalytics",
